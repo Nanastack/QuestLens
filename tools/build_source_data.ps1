@@ -96,13 +96,30 @@ try {
   $available=[regex]::Match($s,'status\s*==\s*xi.questStatus.QUEST_AVAILABLE')
   if(-not $available.Success){continue}
   $section=($s.Substring($available.Index+$available.Length) -split 'check = function',2)[0]
-  $npc=[regex]::Match($section,'\[[''"]([^''"]+)[''"]\]\s*=\s*\{')
-  if(-not $npc.Success){continue}
+  $npc=$null
+  foreach($candidateNpc in [regex]::Matches($section,'\[[''"]([^''"]+)[''"]\]\s*=\s*(?:\{|function\b|quest:progress(?:Event|Cutscene)\(|quest:event\(\s*\d+)')){
+   if($candidateNpc.Value -match 'quest:event\(\s*(\d+)'){
+    $eventId=$Matches[1]
+    $eventHandler=[regex]::Match($section,'(?s)\['+$eventId+'\]\s*=\s*function\b(.*?)(?=\n\s*\[|\z)')
+    if(-not $eventHandler.Success -or $eventHandler.Groups[1].Value -notmatch 'quest:begin\(player\)'){continue}
+   }
+   $npc=$candidateNpc;break
+  }
+  if(-not $npc){continue}
   $name=$npc.Groups[1].Value;$nameSpace=$name -replace '_',' '
-  $pattern='--\s*(?:'+[regex]::Escape($name)+'|'+[regex]::Escape($nameSpace)+')\s*:?\s*!pos\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+(\d+)'
+  $pattern='--\s*(?:'+[regex]::Escape($name)+'|'+[regex]::Escape($nameSpace)+')(?=[\s,:])[^!\r\n]*!pos\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+(\d+)'
   $position=[regex]::Match($raw,$pattern)
-  if(-not $position.Success){continue}
-  $zone=[int]$position.Groups[1].Value;$key=$zone.ToString()+':'+(Norm $name)+':'+$group+':'+$entry.id
+  if($position.Success){$zone=[int]$position.Groups[1].Value}
+  else{
+   $zoneRefs=[regex]::Matches($section.Substring(0,$npc.Index),'\[xi.zone\.(\w+)\]')
+   if($zoneRefs.Count -eq 0){continue}
+   $locationKey=(Norm $zoneRefs[$zoneRefs.Count-1].Groups[1].Value)+':'+(Norm $name)
+   $locations=Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\data\npc_locations.json') -Raw | ConvertFrom-Json
+   $location=$locations.PSObject.Properties[$locationKey]
+   if(-not $location){continue}
+   $zone=[int]$location.Value
+  }
+  $key=$zone.ToString()+':'+(Norm $name)+':'+$group+':'+$entry.id
   if(-not $unique.ContainsKey($key)){
    $unique[$key]=$true;$npcs.Add(@{zone=$zone;npc=$nameSpace;group=$group;id=[int]$entry.id;title=$entry.title})
   }

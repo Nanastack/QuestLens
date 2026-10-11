@@ -133,6 +133,9 @@ function M.variant(entry,state)
 end
 function M.unaccepted(entry,state)
     local gates=eligibility[entry.group..':'..entry.id] or entry
+    for _,blocked in ipairs(gates.requiresNotActive or {}) do
+        if (state.quests[blocked.group] or {})[blocked.id] then return false end
+    end
     for _,previous in ipairs(gates.requiresCompleted or {}) do
         if not (state.completedQuests[previous.group] or {})[previous.id] then return false end
     end

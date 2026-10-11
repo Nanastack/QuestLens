@@ -1,6 +1,8 @@
 -- Downloaded source is parsed as data in the worker, never executed as Lua.
 local json=require('json')
 local manifest
+local bundledNpcs={}
+for _,q in ipairs(require('data.quest_npcs')) do bundledNpcs[#bundledNpcs+1]=q end
 local M={revision=0,current=nil}
 local function norm(s)return s:lower():gsub('[^a-z0-9]','')end
 local function integer(n,min,max)return type(n)=='number' and n==math.floor(n) and n>=min and n<=max end
@@ -92,7 +94,7 @@ function M.apply(data)
     -- Retain verified legacy starters while the worker refreshes modern quest scripts.
     local npcs={}
     local seen={}
-    for _,entries in ipairs({data.npcs,require('data.legacy_quest_npcs')}) do
+    for _,entries in ipairs({data.npcs,bundledNpcs}) do
         for _,q in ipairs(entries) do
             local approved=manifest.ids[q.group..':'..q.id]
             local key=q.zone..':'..norm(q.npc)..':'..q.group..':'..q.id

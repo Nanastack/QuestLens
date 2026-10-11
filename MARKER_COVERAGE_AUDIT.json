@@ -1,0 +1,714 @@
+{
+  "approvedIdentities": 424,
+  "starterReferences": 307,
+  "coveredIdentities": 307,
+  "unresolved": [
+    {
+      "group": "SANDORIA",
+      "id": 20,
+      "title": "To Cure A Cough",
+      "symbol": "tocureacough"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 26,
+      "title": "Undying Flames",
+      "symbol": "undyingflames"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 58,
+      "title": "Growing Flowers",
+      "symbol": "growingflowers"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 67,
+      "title": "A Job For The Consortium",
+      "symbol": "ajobfortheconsortium"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 89,
+      "title": "Pieujes Decision",
+      "symbol": "pieujesdecision"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 93,
+      "title": "The Holy Crest",
+      "symbol": "theholycrest"
+    },
+    {
+      "group": "SANDORIA",
+      "id": 117,
+      "title": "Thick Shells",
+      "symbol": "thickshells"
+    },
+    {
+      "group": "BASTOK",
+      "id": 8,
+      "title": "Shady Business",
+      "symbol": "shadybusiness"
+    },
+    {
+      "group": "BASTOK",
+      "id": 12,
+      "title": "Gourmet",
+      "symbol": "gourmet"
+    },
+    {
+      "group": "BASTOK",
+      "id": 21,
+      "title": "Mom The Adventurer",
+      "symbol": "momtheadventurer"
+    },
+    {
+      "group": "BASTOK",
+      "id": 25,
+      "title": "Mean Machine",
+      "symbol": "meanmachine"
+    },
+    {
+      "group": "BASTOK",
+      "id": 50,
+      "title": "A Ladys Heart",
+      "symbol": "aladysheart"
+    },
+    {
+      "group": "BASTOK",
+      "id": 59,
+      "title": "Blade Of Evil",
+      "symbol": "bladeofevil"
+    },
+    {
+      "group": "BASTOK",
+      "id": 74,
+      "title": "Brygid The Stylist Returns",
+      "symbol": "brygidthestylistreturns"
+    },
+    {
+      "group": "BASTOK",
+      "id": 75,
+      "title": "Out Of The Depths",
+      "symbol": "outofthedepths"
+    },
+    {
+      "group": "BASTOK",
+      "id": 77,
+      "title": "A Question Of Faith",
+      "symbol": "aquestionoffaith"
+    },
+    {
+      "group": "BASTOK",
+      "id": 79,
+      "title": "Teak Me To The Stars",
+      "symbol": "teakmetothestars"
+    },
+    {
+      "group": "BASTOK",
+      "id": 85,
+      "title": "Achieving True Power",
+      "symbol": "achievingtruepower"
+    },
+    {
+      "group": "WINDURST",
+      "id": 5,
+      "title": "In A Pickle",
+      "symbol": "inapickle"
+    },
+    {
+      "group": "WINDURST",
+      "id": 19,
+      "title": "The Postman Always Kos Twice",
+      "symbol": "thepostmanalwayskostwice"
+    },
+    {
+      "group": "WINDURST",
+      "id": 23,
+      "title": "All At Sea",
+      "symbol": "allatsea"
+    },
+    {
+      "group": "WINDURST",
+      "id": 35,
+      "title": "To Bee Or Not To Bee",
+      "symbol": "tobeeornottobee"
+    },
+    {
+      "group": "WINDURST",
+      "id": 39,
+      "title": "Creepy Crawlies",
+      "symbol": "creepycrawlies"
+    },
+    {
+      "group": "WINDURST",
+      "id": 45,
+      "title": "In A Stew",
+      "symbol": "inastew"
+    },
+    {
+      "group": "WINDURST",
+      "id": 46,
+      "title": "Let Sleeping Dogs Lie",
+      "symbol": "letsleepingdogslie"
+    },
+    {
+      "group": "WINDURST",
+      "id": 50,
+      "title": "Say It With Flowers",
+      "symbol": "sayitwithflowers"
+    },
+    {
+      "group": "WINDURST",
+      "id": 52,
+      "title": "Something Fishy",
+      "symbol": "somethingfishy"
+    },
+    {
+      "group": "WINDURST",
+      "id": 62,
+      "title": "Twinstone Bonding",
+      "symbol": "twinstonebonding"
+    },
+    {
+      "group": "WINDURST",
+      "id": 65,
+      "title": "Flower Child",
+      "symbol": "flowerchild"
+    },
+    {
+      "group": "WINDURST",
+      "id": 92,
+      "title": "One Good Deed",
+      "symbol": "onegooddeed"
+    },
+    {
+      "group": "JEUNO",
+      "id": 5,
+      "title": "Save My Son",
+      "symbol": "savemyson"
+    },
+    {
+      "group": "JEUNO",
+      "id": 8,
+      "title": "The Kind Cardian",
+      "symbol": "thekindcardian"
+    },
+    {
+      "group": "JEUNO",
+      "id": 12,
+      "title": "A Minstrel In Despair",
+      "symbol": "aminstrelindespair"
+    },
+    {
+      "group": "JEUNO",
+      "id": 15,
+      "title": "Community Service",
+      "symbol": "communityservice"
+    },
+    {
+      "group": "JEUNO",
+      "id": 27,
+      "title": "The Gobbiebag Part I",
+      "symbol": "thegobbiebagparti"
+    },
+    {
+      "group": "JEUNO",
+      "id": 28,
+      "title": "The Gobbiebag Part Ii",
+      "symbol": "thegobbiebagpartii"
+    },
+    {
+      "group": "JEUNO",
+      "id": 29,
+      "title": "The Gobbiebag Part Iii",
+      "symbol": "thegobbiebagpartiii"
+    },
+    {
+      "group": "JEUNO",
+      "id": 30,
+      "title": "The Gobbiebag Part Iv",
+      "symbol": "thegobbiebagpartiv"
+    },
+    {
+      "group": "JEUNO",
+      "id": 32,
+      "title": "Mysteries Of Beadeaux Ii",
+      "symbol": "mysteriesofbeadeauxii"
+    },
+    {
+      "group": "JEUNO",
+      "id": 44,
+      "title": "Borghertzs Warring Hands",
+      "symbol": "borghertzswarringhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 45,
+      "title": "Borghertzs Striking Hands",
+      "symbol": "borghertzsstrikinghands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 46,
+      "title": "Borghertzs Healing Hands",
+      "symbol": "borghertzshealinghands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 47,
+      "title": "Borghertzs Sorcerous Hands",
+      "symbol": "borghertzssorceroushands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 48,
+      "title": "Borghertzs Vermillion Hands",
+      "symbol": "borghertzsvermillionhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 49,
+      "title": "Borghertzs Sneaky Hands",
+      "symbol": "borghertzssneakyhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 50,
+      "title": "Borghertzs Stalwart Hands",
+      "symbol": "borghertzsstalwarthands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 51,
+      "title": "Borghertzs Shadowy Hands",
+      "symbol": "borghertzsshadowyhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 52,
+      "title": "Borghertzs Wild Hands",
+      "symbol": "borghertzswildhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 53,
+      "title": "Borghertzs Harmonious Hands",
+      "symbol": "borghertzsharmonioushands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 54,
+      "title": "Borghertzs Chasing Hands",
+      "symbol": "borghertzschasinghands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 55,
+      "title": "Borghertzs Loyal Hands",
+      "symbol": "borghertzsloyalhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 56,
+      "title": "Borghertzs Lurking Hands",
+      "symbol": "borghertzslurkinghands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 57,
+      "title": "Borghertzs Dragon Hands",
+      "symbol": "borghertzsdragonhands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 58,
+      "title": "Borghertzs Calling Hands",
+      "symbol": "borghertzscallinghands"
+    },
+    {
+      "group": "JEUNO",
+      "id": 62,
+      "title": "A New Dawn",
+      "symbol": "anewdawn"
+    },
+    {
+      "group": "JEUNO",
+      "id": 66,
+      "title": "Searching For The Right Words",
+      "symbol": "searchingfortherightwords"
+    },
+    {
+      "group": "JEUNO",
+      "id": 67,
+      "title": "Beat Around The Bushin",
+      "symbol": "beataroundthebushin"
+    },
+    {
+      "group": "JEUNO",
+      "id": 68,
+      "title": "Ducal Hospitality",
+      "symbol": "ducalhospitality"
+    },
+    {
+      "group": "JEUNO",
+      "id": 74,
+      "title": "The Gobbiebag Part V",
+      "symbol": "thegobbiebagpartv"
+    },
+    {
+      "group": "JEUNO",
+      "id": 75,
+      "title": "The Gobbiebag Part Vi",
+      "symbol": "thegobbiebagpartvi"
+    },
+    {
+      "group": "JEUNO",
+      "id": 77,
+      "title": "Unlisted Qualities",
+      "symbol": "unlistedqualities"
+    },
+    {
+      "group": "JEUNO",
+      "id": 86,
+      "title": "Storms Of Fate",
+      "symbol": "stormsoffate"
+    },
+    {
+      "group": "JEUNO",
+      "id": 88,
+      "title": "Shadows Of The Departed",
+      "symbol": "shadowsofthedeparted"
+    },
+    {
+      "group": "JEUNO",
+      "id": 89,
+      "title": "Apocalypse Nigh",
+      "symbol": "apocalypsenigh"
+    },
+    {
+      "group": "JEUNO",
+      "id": 92,
+      "title": "Chocobo On The Loose",
+      "symbol": "chocoboontheloose"
+    },
+    {
+      "group": "JEUNO",
+      "id": 93,
+      "title": "The Gobbiebag Part Vii",
+      "symbol": "thegobbiebagpartvii"
+    },
+    {
+      "group": "JEUNO",
+      "id": 94,
+      "title": "The Gobbiebag Part Viii",
+      "symbol": "thegobbiebagpartviii"
+    },
+    {
+      "group": "JEUNO",
+      "id": 123,
+      "title": "The Gobbiebag Part Ix",
+      "symbol": "thegobbiebagpartix"
+    },
+    {
+      "group": "JEUNO",
+      "id": 124,
+      "title": "The Gobbiebag Part X",
+      "symbol": "thegobbiebagpartx"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 0,
+      "title": "Rycharde The Chef",
+      "symbol": "rychardethechef"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 1,
+      "title": "Way Of The Cook",
+      "symbol": "wayofthecook"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 2,
+      "title": "Unending Chase",
+      "symbol": "unendingchase"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 3,
+      "title": "His Name Is Valgeir",
+      "symbol": "hisnameisvalgeir"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 4,
+      "title": "Expertise",
+      "symbol": "expertise"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 5,
+      "title": "The Clue",
+      "symbol": "theclue"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 6,
+      "title": "The Basics",
+      "symbol": "thebasics"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 9,
+      "title": "A Potters Preference",
+      "symbol": "apotterspreference"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 10,
+      "title": "The Old Lady",
+      "symbol": "theoldlady"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 24,
+      "title": "Elder Memories",
+      "symbol": "eldermemories"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 25,
+      "title": "Test My Mettle",
+      "symbol": "testmymettle"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 32,
+      "title": "Waking The Beast",
+      "symbol": "wakingthebeast"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 65,
+      "title": "X Marks The Spot",
+      "symbol": "xmarksthespot"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 67,
+      "title": "The Call Of The Sea",
+      "symbol": "thecallofthesea"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 68,
+      "title": "Paradise Salvation And Maps",
+      "symbol": "paradisesalvationandmaps"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 69,
+      "title": "Go Go Gobmuffin",
+      "symbol": "gogogobmuffin"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 70,
+      "title": "The Big One",
+      "symbol": "thebigone"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 71,
+      "title": "Fly High",
+      "symbol": "flyhigh"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 74,
+      "title": "Petals For Parelbriaux",
+      "symbol": "petalsforparelbriaux"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 75,
+      "title": "Elderly Pursuits",
+      "symbol": "elderlypursuits"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 77,
+      "title": "Behind The Smile",
+      "symbol": "behindthesmile"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 78,
+      "title": "Knocking On Forbidden Doors",
+      "symbol": "knockingonforbiddendoors"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 80,
+      "title": "In Search Of The Truth",
+      "symbol": "insearchofthetruth"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 81,
+      "title": "Uninvited Guests",
+      "symbol": "uninvitedguests"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 83,
+      "title": "Requiem Of Sin",
+      "symbol": "requiemofsin"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 100,
+      "title": "Give A Moogle A Break",
+      "symbol": "giveamoogleabreak"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 101,
+      "title": "The Moogle Picnic",
+      "symbol": "themooglepicnic"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 102,
+      "title": "Moogles In The Wild",
+      "symbol": "mooglesinthewild"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 104,
+      "title": "For The Birds",
+      "symbol": "forthebirds"
+    },
+    {
+      "group": "OTHER_AREAS",
+      "id": 105,
+      "title": "Better The Demon You Know",
+      "symbol": "betterthedemonyouknow"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 3,
+      "title": "A Question Of Taste",
+      "symbol": "aquestionoftaste"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 134,
+      "title": "Everyones Grudge",
+      "symbol": "everyonesgrudge"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 199,
+      "title": "Chasing Dreams",
+      "symbol": "chasingdreams"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 193,
+      "title": "The Missing Piece",
+      "symbol": "themissingpiece"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 164,
+      "title": "Divine Might Repeat",
+      "symbol": "divinemightrepeat"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 163,
+      "title": "Divine Might",
+      "symbol": "divinemight"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 162,
+      "title": "Soul Searching",
+      "symbol": "soulsearching"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 161,
+      "title": "Wandering Souls",
+      "symbol": "wanderingsouls"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 192,
+      "title": "Dont Forget The Antidote",
+      "symbol": "dontforgettheantidote"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 160,
+      "title": "Wrath Of The Opo Opos",
+      "symbol": "wrathoftheopoopos"
+    },
+    {
+      "group": "OUTLANDS",
+      "id": 130,
+      "title": "Black Market",
+      "symbol": "blackmarket"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 17,
+      "title": "Two Horn The Savage",
+      "symbol": "twohornthesavage"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 20,
+      "title": "Rock Bottom",
+      "symbol": "rockbottom"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 26,
+      "title": "Against All Odds",
+      "symbol": "againstallodds"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 29,
+      "title": "Puppetmaster Blues",
+      "symbol": "puppetmasterblues"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 40,
+      "title": "The Beast Within",
+      "symbol": "thebeastwithin"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 41,
+      "title": "Breaking The Bonds Of Fate",
+      "symbol": "breakingthebondsoffate"
+    },
+    {
+      "group": "AHT_URHGAN",
+      "id": 98,
+      "title": "Promotion First Lieutenant",
+      "symbol": "promotionfirstlieutenant"
+    }
+  ],
+  "limitations": [
+    "Area triggers and non-NPC starts require separate handling",
+    "Missing positions and unusual script conditions require individual review",
+    "Fame and hidden acceptance conditions remain unverified"
+  ]
+}

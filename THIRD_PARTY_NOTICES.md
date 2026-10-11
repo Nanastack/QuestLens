@@ -8,3 +8,7 @@
 - Bundled curl and dependency notices are retained under `tools/curl`. curl distribution: [curl for Windows](https://curl.se/windows/).
 
 These notices do not assign a new license to third-party content.
+
+## Chronicle reference
+
+[ffxi-chronicle](https://github.com/jintawk/ffxi-chronicle) was consulted as an architectural reference for passive incoming quest updates and local display refresh. No Chronicle source code is bundled.

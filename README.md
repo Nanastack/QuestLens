@@ -1,16 +1,14 @@
 # QuestLens
 
-<img width="2622" height="1133" alt="Screenshot 2026-10-10 104303" src="https://github.com/user-attachments/assets/428e880f-8810-441a-bd9a-5df6bee38665" />
-
 Quest and mission tracking for **Phoenix XI**, using **Ashita v4 on 64-bit Windows**.
 
-**Testing release: 0.1.95** · By **Zarianna (100% vibe coded)**
+**Testing release: 0.1.98** · By **Zarianna (100% vibe coded)**
 
 ## Install
 
 1. Extract the release ZIP into your Ashita `addons` folder. The main file must be `addons/questlens/questlens.lua`.
 2. In game, run `/addon load questlens`.
-3. Run `/ql` to open the tracker. The quest log refreshes automatically after character login; `/ql refresh` requests it manually.
+3. Run `/ql` to open the tracker. QuestLens reads quest and mission updates that the game sends naturally. If loaded after those packets have arrived, it may need a zone change before the log is available.
 
 For a GitHub checkout, place this repository's contents directly in `addons/questlens`.
 The addon starts with its windows closed. Add `/addon load questlens` to your Ashita startup script if desired.
@@ -37,14 +35,16 @@ Normal information links stay inside QuestLens. The explicitly labeled Phoenix w
 | --- | --- |
 | `/ql` | Toggle the tracker |
 | `/ql show` / `/ql hide` | Show or hide panels |
-| `/ql refresh` | Request the current quest/mission log |
+| `/ql refresh` | Rebuild the display from locally received quest/mission data |
 | `/ql inventory` | Open Quest Items |
 | `/ql lookup <name>` | Open an item, quest, or zone guide |
 | `/ql received` | Reopen recent new-quest notifications |
 | `/ql updates` | Download and validate supported Phoenix quest-data updates |
 | `/ql help` | Show commands |
 
-When quest markers are enabled or a guide is open, the game log refreshes every minute. This is separate from wiki downloads. Fresh Phoenix guides are reused for 24 hours; BG fallback guides are rechecked after seven days. Refresh guide forces a new request. First-time caching is gradual, and opened or hovered pages take priority.
+Quest tracking is passive: login, markers, guides, and manual refresh never request a quest log from the game server. Incoming `0x056` packets update quest and mission state, including acceptance and completion. Zoning clears the previous zone snapshot and waits for incoming data. `/ql refresh` and **Refresh display (local)** rebuild the display without fetching missing game data. Notifications and marker changes appear when the game supplies the corresponding update.
+
+Wiki downloads are separate. Fresh Phoenix guides are reused for 24 hours; BG fallback guides are rechecked after seven days. Refresh guide forces a new request. First-time caching is gradual, and opened or hovered pages take priority.
 
 ## Testing limits
 
@@ -52,7 +52,7 @@ When quest markers are enabled or a guide is open, the game log refreshes every 
 
 Content groups are limited to the supported era through **Treasures of Aht Urhgan**. Wings of the Goddess and later expansion groups are disabled. Regional game logs can still contain later additions; this is not a complete audit of every quest's Phoenix availability.
 
-The bundled marker index contains 147 starter references. Verified chain prerequisites are enforced where indexed. Fame, hidden server variables, cooldowns, and other acceptance conditions are not fully checked. A marker is a guide hint, not proof that the NPC will offer a quest. Debug preview deliberately bypasses quest checks; disable it when testing normal behavior. Normal markers use a five-yalm range and hide during cutscenes and zoning; the extended-range test option is separate.
+The bundled marker index contains 307 starter references. Verified chain prerequisites are enforced where indexed. Fame, hidden server variables, cooldowns, and other acceptance conditions are not fully checked. A marker is a guide hint, not proof that the NPC will offer a quest. Debug preview deliberately bypasses quest checks; disable it when testing normal behavior. Normal markers use a five-yalm range and hide during cutscenes and zoning; the extended-range test option is separate.
 
 Green repeatable world markers require a verified recipe and the full quantities in **main Inventory**, not Satchel or other storage. Requirement checks in guides use listed quantities when available; otherwise they indicate item ownership only. Unloaded storage cannot be assumed empty.
 

@@ -1,6 +1,6 @@
 addon.name='questlens'
 addon.author='Zarianna (100% vibe coded)'
-addon.version='0.1.95'
+addon.version='0.1.98'
 addon.desc='Active quests and missions with Phoenix wiki hover cards and maps.'
 require('common')
 local imgui=require('imgui')
@@ -77,8 +77,6 @@ local reception={module=require('lib.quest_notices'),observer={groups={}},quests
 local hoverTitle,hoverStart
 local lastPoll=0
 local character=nil
-local autoRefreshPending=true
-local loginReadyAt=nil
 local function inGame()
     local ok,status=pcall(function() return AshitaCore:GetMemoryManager():GetPlayer():GetLoginStatus() end)
     return ok and status==2
@@ -104,23 +102,18 @@ local function updateControls()
     imgui.TextWrapped(wiki.updateMessage())
     imgui.TextWrapped('Checks Phoenix source, downloads quest scripts and refreshes NPC markers, item uses and repeatable recipes. Previous data is retained if validation fails. Wiki guides refresh separately. New quest identities and unsupported script formats may still need an addon release.')
 end
-local refreshAt=-100
-local refreshStatus=''
+local refreshStatus='Waiting for incoming quest/mission data. Zoning can provide the game log.'
 local function refreshLog()
-    local t=now()
-    if t-refreshAt<15 then return end
-    local name=AshitaCore:GetMemoryManager():GetParty():GetMemberName(0)
-    if not inGame() or not name or name=='' then refreshStatus='Log in before refreshing.';return false end
-    -- Phoenix GAMEOK (0x00C) responds with SendQuestMissionLog plus
-    -- other character data. Twelve bytes include the packet header.
-    local ok,err=pcall(function()
-        AshitaCore:GetPacketManager():AddOutgoingPacket(0x00C,{0,0,0,0,0,0,0,0,0,0,0,0})
-    end)
-    refreshAt=t
-    if ok then autoRefreshPending=false;refreshStatus='Request sent; waiting for quest/mission log...'
-    else refreshStatus='Refresh failed: '..tostring(err) end
-    return ok
+    revision=-1;state.renderAfter=nil
+    worldMarkers.reset()
+    if state.revision>0 then
+        refreshStatus='Display rebuilt from locally received quest/mission data.'
+    else
+        refreshStatus='No quest/mission data received yet. Local refresh cannot fetch it; try zoning.'
+    end
+    return true
 end
+
 local function go(title,push)
     title=wiki.resolve(title)
     if push and selected and selected~=title then
@@ -646,7 +639,10 @@ ashita.events.register('packet_in','questlens_packets',function(e)
         worldMarkers.reset()
         inventoryRows={};inventorySelected=nil;inventoryScanAt=-100;inventoryKnown=false
         -- Refresh character data while keeping the current guide and navigation.
-        state=tracker.new();rows={};revision=-1
+        state=tracker.new();rows={};completedRows={};revision=-1
+        refreshStatus='Waiting for incoming quest/mission data after zoning.'
+    elseif e.id==0x055 then
+        inventoryScanAt=-100;markerInventoryAt=-100
     elseif e.id==0x056 then
         if tracker.decode(state,e.data) then
             for _,entry in ipairs(reception.module.update(reception.observer,state,catalog)) do
@@ -655,9 +651,10 @@ ashita.events.register('packet_in','questlens_packets',function(e)
                 if #reception.quests>10 then table.remove(reception.quests) end
                 reception.opened[1]=true;reception.at=now()
                 wiki.prefetch(entry.name)
-                say('Quest received: '..entry.name..' — /ql received to open the guide or pin it.')
+                print('\30\104[QuestLens] NEW QUEST: '..entry.name..' - /ql received to open the guide or pin it.\30\01')
             end
-            if refreshStatus:find('waiting',1,true) then refreshStatus='Quest/mission log received.' end
+            refreshStatus='Quest/mission data received from the game.'
+            state.renderAfter=now()+0.25
         end
     end
 end)
@@ -688,7 +685,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
     local party=AshitaCore:GetMemoryManager():GetParty()
     local name=party:GetMemberName(0)
     if not inGame() or not name or name=='' then
-        name=nil;loginReadyAt=nil;autoRefreshPending=true;refreshAt=-100
+        name=nil
     end
     if name and name~='' and character~=name then
         worldMarkers.reset()
@@ -697,18 +694,9 @@ ashita.events.register('d3d_present','questlens_draw',function()
         reception.observer=reception.module.new();reception.quests={};reception.opened[1]=false
         missingNotices={};completedNotice=nil
         inventoryRows={};inventorySelected=nil;inventoryScanAt=-100;cacheScanAt=-100;inventoryKnown=false
-        autoRefreshPending=true;loginReadyAt=nil;refreshAt=-100
         wiki.clearPrefetch()
     end
-    if name and autoRefreshPending then
-        loginReadyAt=loginReadyAt or t
-        -- Let character memory settle before requesting the server snapshot.
-        if t-loginReadyAt>=2 and refreshLog() then autoRefreshPending=false end
-    end
-    if name and not autoRefreshPending and (trackingOptions.worldMarkers or detail[1]) and t-refreshAt>=60 then
-        refreshLog()
-    end
-    if state.revision~=revision then
+    if state.revision~=revision and (not state.renderAfter or t>=state.renderAfter) then
         rows=tracker.entries(state,catalog)
         for _,v in ipairs(rows) do v.name=wiki.resolve(v.name) end
         revision=state.revision;cacheScanAt=-100
@@ -752,9 +740,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
             mouseNavigation()
             imgui.TextDisabled(character or 'Waiting for character...')
             coverageBanner()
-            local remaining=math.max(0,math.ceil(15-(t-refreshAt)))
-            if imgui.Button(remaining>0 and ('Refresh log ('..remaining..'s)') or 'Refresh quest / mission log') then refreshLog() end
-            if refreshStatus:find('waiting',1,true) and t-refreshAt>15 then refreshStatus='No log response received. Try again.' end
+            if imgui.Button('Refresh display (local)') then refreshLog() end
             if refreshStatus~='' then imgui.TextWrapped(refreshStatus) end
             imgui.Dummy({0,8})
             local markersEnabled={trackingOptions.worldMarkers==true}
@@ -900,7 +886,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
                 elseif kind=='Completed' then imgui.TextWrapped('No matching completed entries received. Refresh the quest / mission log to update this list.')
                 elseif kind=='Unaccepted' then imgui.TextWrapped('No matching pinned quests outside your active log. Pin a quest from Quest Items to add it here.')
                 elseif kind=='Pinned' then imgui.TextWrapped('No matching pinned quests or missions.')
-                else imgui.TextWrapped(next(state.seen) and 'No matching active entries.' or 'Waiting for quest/mission packets. Click Refresh quest / mission log to request them without zoning.') end
+                else imgui.TextWrapped(next(state.seen) and 'No matching active entries.' or 'Waiting for incoming quest/mission packets. Zoning can provide the game log; Refresh display only rebuilds local data.') end
             end
             imgui.EndChild()
             imgui.TextDisabled(count..' shown. Box: pin/unpin. Circle/slash: ignore. Green arrow: restore.')

@@ -1,8 +1,11 @@
-# Testing QuestLens 0.1.95
+# Testing QuestLens 0.1.98
 
 Start with Debug preview and Extended test range disabled.
 
-- Confirm login loads your log without opening the tracker automatically.
+- Confirm incoming game data populates your log without opening the tracker automatically. Loading the addon after login may require zoning.
+- Use `/ql refresh` repeatedly; it should rebuild local data without requesting a log.
+- Open a guide and enable markers, then leave them running for several minutes. QuestLens should send no quest-log requests.
+- Zone and confirm newly received data restores the tracker while open guides remain available.
 - Open active quest and mission guides, then hover again after their cache fills.
 - Check Quest Items across Inventory, Satchel, and other loaded containers.
 - Pin from the tracker, item list, and guide panel; reload and confirm pins remain.
