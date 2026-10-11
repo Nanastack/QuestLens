@@ -1,5 +1,7 @@
 # QuestLens
 
+<img width="2622" height="1133" alt="Screenshot 2026-10-10 104303" src="https://github.com/user-attachments/assets/710f6431-d367-4a44-92b9-da6c689cc059" />
+
 Quest and mission tracking for **Phoenix XI**, using **Ashita v4 on 64-bit Windows**.
 
 **Testing release: 0.1.98** · By **Zarianna (100% vibe coded)**
