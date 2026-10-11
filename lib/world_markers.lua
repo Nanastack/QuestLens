@@ -1,3 +1,4 @@
+local debugEmotes=require('lib.debug_emotes')
 -- Lightweight screen projection inspired by the installed xonellines renderer.
 -- Cached Moogle texture and solid question mark; no animation writes or depth draws.
 local M={camera=nil,pass=0,lastScan=-100,candidates={},zone=nil,fault=nil}
@@ -73,6 +74,17 @@ function M.drawMarker(drawList,x,y,factor,variant,static)
     end
 end
 function M.preview()
+    if imgui.Button('Greet targeted NPC now') then debugEmotes.requested=true end
+    imgui.TextWrapped('One-shot local injection for your targeted humanoid NPC within 12 yalms, even without quests. Bypasses wave cooldowns, temporarily faces you, then waits 0.3 seconds before the emote, then checks facing for restoration 6 seconds afterward. Never sends to the server. No effect during cutscenes or zoning.')
+    local waving={debugEmotes.enabled}
+    if imgui.Checkbox('Debug: local quest NPC greetings (no server traffic)',waving) then
+        debugEmotes.enabled=waving[1];debugEmotes.reset()
+    end
+    local delay={debugEmotes.delay}
+    if imgui.SliderInt('Seconds between emotes##debug',delay,5,300) then debugEmotes.delay=delay[1] end
+    imgui.TextWrapped('Random wave, welcome or huh. Eligible humanoid quest NPCs within 12 yalms; the delay applies between automatic emotes and to each NPC. Enabled by default. Default 20-second delay; reload restores these defaults. Manual button bypasses the delay. Cutscenes and zoning suppress new emotes.')
+    imgui.TextWrapped(debugEmotes.status)
+
     local extended={M.extendedRange==true}
     if imgui.Checkbox('Extended test range (all loaded, on-screen NPCs)',extended) then
         M.extendedRange=extended[1];M.reset()
@@ -80,15 +92,15 @@ function M.preview()
     if M.extendedRange then
         imgui.TextColored({1,0.75,0.2,1},'EXTENDED TEST RANGE ACTIVE')
     end
-    imgui.TextWrapped('Extended range removes the 5-yalm limit without bypassing quest checks. Only NPCs loaded by the game can be tested. Resets on addon reload.')
+    imgui.TextWrapped('Extended range removes the 9-yalm limit without bypassing quest checks. Only NPCs loaded by the game can be tested. Resets on addon reload.')
     local enabled={M.debugWorld==true}
     if imgui.Checkbox('Preview Moogle marker above player and visible NPCs',enabled) then
         M.debugWorld=enabled[1];M.fault=nil;M.reset()
     end
-    imgui.TextWrapped('Enable this to place the real world marker above your character and on-screen NPCs within 5 yalms, regardless of quest status. You can close this window while testing. Disable the checkbox to stop; preview also turns off on addon reload.')
+    imgui.TextWrapped('Enable this to place the real world marker above your character and on-screen NPCs within 9 yalms, regardless of quest status. You can close this window while testing. Disable the checkbox to stop; preview also turns off on addon reload.')
     if M.debugWorld then imgui.TextColored({1,0.75,0.2,1},'IN-WORLD DEBUG PREVIEW ACTIVE - quest checks bypassed') end
     imgui.TextWrapped('Completed repeatable quests: looping arrow means missing or unverified items; green check means the full verified recipe is in Inventory. Other conditions and cooldowns may still apply.')
-    imgui.TextWrapped('Hidden during cutscenes and zoning. NPC waving is not implemented. Normal quest markers do not yet check fame or all acceptance requirements.')
+    imgui.TextWrapped('Hidden during cutscenes and zoning. NPC waving is an optional local debug preview. Normal quest markers do not yet check fame or all acceptance requirements.')
     imgui.TextWrapped(M.available and 'D3D camera support: available' or 'D3D camera support: unavailable')
     imgui.TextWrapped('Markers drawn last frame: '..tostring(M.lastDrawn or 0))
     imgui.TextWrapped('Renderer status: '..(M.status or 'Waiting for preview'))
@@ -157,8 +169,8 @@ function M.renderPosition(pointer)
     return {x=ashita.memory.read_float(pointer+0x678),
         y=ashita.memory.read_float(pointer+0x67C),z=ashita.memory.read_float(pointer+0x680)}
 end
-function M.inRange(a,b)
-    return (a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2<=25
+function M.inRange(a,b,range)
+    return (a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2<=(range or 9)^2
 end
 local function transform(x,y,z,w,m)
     return x*m._11+y*m._21+z*m._31+w*m._41,
@@ -195,6 +207,7 @@ local function capture()
     M.camera={view=copy(view),projection=copy(projection),viewport={X=vp.X,Y=vp.Y,Width=vp.Width,Height=vp.Height}}
 end
 function M.beginScene(enabled)
+    enabled=enabled or debugEmotes.enabled or debugEmotes.requested
     M.pass=M.pass+1
     if enabled and M.available and not M.fault and M.pass==2 then
         local success,err=pcall(capture)
@@ -218,10 +231,25 @@ local function draw(state,time)
     local index=party:GetMemberTargetIndex(0);if not index or index==0 then M.status='Player entity unavailable';return end
     local entities=mm:GetEntity();local zoning=player:GetIsZoning()
     if not M.canShow(player:GetLoginStatus(),zoning==true or type(zoning)=='number' and zoning~=0,
-        entities:GetStatus(index),flag(eventPointer,1),flag(hiddenPointer,10,0xB4)) then M.status='Hidden: login, zoning, cutscene or game interface';return end
+        entities:GetStatus(index),flag(eventPointer,1),flag(hiddenPointer,10,0xB4)) then M.status='Hidden: login, zoning, cutscene or game interface';if M.forceWave then debugEmotes.status='Wave blocked: cutscene, zoning or game interface' end;return end
     local zone=party:GetMemberZone(0);local starters=zones[zone]
-    if not starters and not M.debugWorld then M.status='No indexed NPC quests in this zone';return end
+    if not starters and not M.debugWorld and not M.forceWave then M.status='No indexed NPC quests in this zone';return end
     local me={x=entities:GetLocalPositionX(index),y=entities:GetLocalPositionZ(index),z=entities:GetLocalPositionY(index)}
+    if M.forceWave then
+        local count=0
+        local targetIndex=mm:GetTarget():GetTargetIndex(0)
+        for _,id in ipairs({targetIndex or 0}) do
+            local pointer=entities:GetActorPointer(id)
+            if pointer and pointer~=0 and id~=index then
+                local flags=entities:GetSpawnFlags(id)
+                if bit.band(flags,2)~=0 and bit.band(flags,0x11)==0 then
+                    local p=M.renderPosition(pointer)
+                    if debugEmotes.tryWave(entities,id,index,time,M.inRange(p,me,12),true) then count=count+1 end
+                end
+            end
+        end
+        debugEmotes.status=count>0 and 'Turning targeted NPC; greeting queued' or 'No eligible targeted NPC within 12 yalms'
+    end
     if M.zone~=zone or time-M.lastScan>=0.5 then
         M.candidates={};M.zone=zone;M.lastScan=time
         for id=0,0x8FF do
@@ -281,13 +309,26 @@ local function draw(state,time)
             local candidate=M.variant(quest,state)
             if not M.debugWorld and candidate and (not variant or candidate=='ready' or candidate=='quest' and variant=='repeat') then variant=candidate end
         end
+        if debugEmotes.enabled then
+            local eligible=false
+            for _,quest in ipairs(npc.quests) do if M.variant(quest,state) then eligible=true;break end end
+            local actorPointer=entities:GetActorPointer(npc.index)
+            if eligible and actorPointer and actorPointer~=0 then
+                local p=M.renderPosition(actorPointer)
+                debugEmotes.tryWave(entities,npc.index,index,time,M.inRange(p,me,12))
+            end
+        end
         local available=variant~=nil
         if available and (M.debugWorld or M.extendedRange or drawn<16) then
-            drawEntity(npc.index,variant)
+            if M.markersEnabled then drawEntity(npc.index,variant) end
         end
     end
 end
 function M.present(state,time,enabled)
+    debugEmotes.tick(time)
+    M.markersEnabled=enabled
+    M.forceWave=debugEmotes.requested==true;debugEmotes.requested=false
+    enabled=enabled or debugEmotes.enabled or M.forceWave
     M.animationTime=time
     M.lastDrawn=0
     if enabled and M.available and not M.fault then
@@ -301,5 +342,6 @@ function M.present(state,time,enabled)
     end
     M.pass=0;M.capturedThisFrame=false
 end
-function M.reset() M.inspection={};M.candidates={};M.zone=nil;M.camera=nil;M.pass=0;M.capturedThisFrame=false end
+function M.cleanup() debugEmotes.tick(math.huge,true) end
+function M.reset() debugEmotes.reset();M.inspection={};M.candidates={};M.zone=nil;M.camera=nil;M.pass=0;M.capturedThisFrame=false end
 return M

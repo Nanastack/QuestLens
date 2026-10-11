@@ -2,7 +2,7 @@
 
 Quest and mission tracking for **Phoenix XI**, using **Ashita v4 on 64-bit Windows**.
 
-**Testing release: 0.1.98** · By **Zarianna (100% vibe coded)**
+**Testing release: 0.2.1** · By **Zarianna (100% vibe coded)**
 
 ## Install
 
@@ -35,6 +35,7 @@ Normal information links stay inside QuestLens. The explicitly labeled Phoenix w
 | --- | --- |
 | `/ql` | Toggle the tracker |
 | `/ql show` / `/ql hide` | Show or hide panels |
+| `/ql reload` | Reload QuestLens |
 | `/ql refresh` | Rebuild the display from locally received quest/mission data |
 | `/ql inventory` | Open Quest Items |
 | `/ql lookup <name>` | Open an item, quest, or zone guide |
@@ -52,10 +53,26 @@ Wiki downloads are separate. Fresh Phoenix guides are reused for 24 hours; BG fa
 
 Content groups are limited to the supported era through **Treasures of Aht Urhgan**. Wings of the Goddess and later expansion groups are disabled. Regional game logs can still contain later additions; this is not a complete audit of every quest's Phoenix availability.
 
-The bundled marker index contains 307 starter references. Verified chain prerequisites are enforced where indexed. Fame, hidden server variables, cooldowns, and other acceptance conditions are not fully checked. A marker is a guide hint, not proof that the NPC will offer a quest. Debug preview deliberately bypasses quest checks; disable it when testing normal behavior. Normal markers use a five-yalm range and hide during cutscenes and zoning; the extended-range test option is separate.
+The bundled marker index contains 307 starter references. Verified chain prerequisites are enforced where indexed. Fame, hidden server variables, cooldowns, and other acceptance conditions are not fully checked. A marker is a guide hint, not proof that the NPC will offer a quest. Debug preview deliberately bypasses quest checks; disable it when testing normal behavior. Normal markers use a nine-yalm range and hide during cutscenes and zoning; the extended-range test option is separate.
 
 Green repeatable world markers require a verified recipe and the full quantities in **main Inventory**, not Satchel or other storage. Requirement checks in guides use listed quantities when available; otherwise they indicate item ownership only. Unloaded storage cannot be assumed empty.
 
-The updater refreshes supported quest identities and recognized script patterns. New identities or unsupported formats may still require an addon release. BG fallback instructions and rewards may differ from Phoenix.
+The updater refreshes supported quest identities and recognized script patterns. New identities or unsupported formats may still require an addon release. BG fallback guides describe retail FFXI and may not match the Phoenix server era, including fast travel, quest requirements and rewards.
 
 See [TESTING.md](TESTING.md) for useful checks and issue details. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for attribution.
+
+Debug includes an enabled-by-default local NPC greeting preview. This synthesizes an incoming motion-only emote for the client using Ashita AddIncomingPacket; it does not send packets or emote commands to the game server. Eligible humanoid quest NPCs within nine yalms can wave occasionally. Model support and facing behavior require in-game testing. Toggle off stops new waves; any animation already started can finish. Preview resets on reload.
+
+Debug: Wave targeted NPC now attempts one local wave on a targeted humanoid NPC within nine yalms, bypassing quest checks and cooldowns. It temporarily adjusts local yaw toward the player and checks after 4.5 seconds, restoring original yaw only if it still matches our temporary setting. Newer game direction and changed NPC identities are preserved. No packets are sent to the server.
+
+Local Debug greetings randomly choose wave or welcome; the manual button is Greet targeted NPC now.
+
+Debug wave/welcome greetings use a 12-yalm range. Moogle markers remain limited to nine yalms.
+
+Debug: Seconds between emotes ranges from 5 to 300 seconds (default 20, resets on reload). Automatic local greetings randomly choose wave, welcome or huh. The manual greeting button bypasses this delay.
+
+Debug greetings turn once, wait 0.3 seconds, then play the local emote. Facing is not tracked or rewritten during the animation. After a six-second animation window, original rotation is restored only if unchanged by the game. Active greetings cannot be restarted; pending emotes are cancelled on zoning, cutscenes, entity changes, moving out of range or unload.
+
+National mission 2-3 sub-stages use their origin nation guide: Windurst/The Three Kingdoms, San d'Oria/Journey Abroad, and Bastok/The Emissary. Destination suffixes do not switch the nation guide.
+
+Automatic local NPC greetings are enabled by default. The Debug toggle can disable them for the current session; reloading enables them again.

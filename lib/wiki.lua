@@ -13,10 +13,14 @@ M.retryAfter={}
 M.background={};M.backgroundSeen={};M.backgroundPriority={};M.lastBackground=0
 function M.resolve(title)
     if type(title)~='string' then return title end
+    M.resolvedTitles=M.resolvedTitles or {}
+    if M.resolvedTitles[title] then return M.resolvedTitles[title] end
+    local normalized=title:lower():gsub('[^a-z0-9]','')
     for name in pairs(localGuides) do
-        if name:lower():gsub('[^a-z0-9]','')==title:lower():gsub('[^a-z0-9]','') then return name end
+        if name:lower():gsub('[^a-z0-9]','')==normalized then M.resolvedTitles[title]=name;return name end
     end
-    return titles[title:lower():gsub('[^a-z0-9]','')] or title
+    local resolved=titles[normalized] or title
+    M.resolvedTitles[title]=resolved;return resolved
 end
 function M.isKnown(title)
     return type(title)=='string' and (localGuides[M.resolve(title)]~=nil or titles[title:lower():gsub('[^a-z0-9]','')]~=nil)
@@ -96,7 +100,7 @@ function M.request(title,refresh)
         if not M.pages[title] and localGuides[title] then
             M.pages[title]=localGuides[title]
             M.pages[title].wikiCheckedAt=v and v.time or 0
-            M.pages[title].fallbackTried=v and v.fallbackSchema==1 or false
+            M.pages[title].fallbackTried=v and not v.error and v.fallbackSchema==1 or false
         end
     end
     local page=M.pages[title]
@@ -124,7 +128,7 @@ local function finish(title,v)
             previous.refreshError=v.error
             if previous.localGuide then
                 previous.wikiCheckedAt=v.time or os.time()
-                previous.fallbackTried=v.fallbackSchema==1
+                previous.fallbackTried=false
             end
         else M.pages[title]=v end
     else
@@ -150,7 +154,7 @@ function M.prefetch(title,priority)
     local page=M.pages[title] or read(title)
     if localGuides[title] and (not page or page.error) then
         local checked=page and page.time or 0
-        local tried=page and page.fallbackSchema==1 or false
+        local tried=page and not page.error and page.fallbackSchema==1 or false
         page=localGuides[title];page.wikiCheckedAt=page.wikiCheckedAt or checked;M.pages[title]=page
         page.fallbackTried=page.fallbackTried or tried
     end
@@ -164,6 +168,7 @@ function M.prefetch(title,priority)
     M.backgroundSeen[title]=true;M.background[#M.background+1]=title
 end
 function M.clearPrefetch()
+    M.resolvedTitles={}
     M.background={};M.backgroundSeen={};M.backgroundPriority={}
 end
 local function readSource()
@@ -246,7 +251,7 @@ function M.tick()
         local title=table.remove(M.queue,1)
         -- Percent encoding prevents titles from becoming PowerShell syntax.
         local args='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'..
-            M.path..'\\tools\\wiki.ps1" -Title "'..M.encode(title)..'" -Key '..key(title)
+            M.path..'\\tools\\wiki.ps1" -Title "'..M.encode(siteTitles.resolve(title,'Phoenix'))..'" -Key '..key(title)
         if localGuides[title] then args=args..' -QuestReference' end
         args=args..' -BgTitle "'..M.encode(siteTitles.resolve(title,'BG'))..'"'
         -- Keep usable disk cache while refreshing; discard only an old error.

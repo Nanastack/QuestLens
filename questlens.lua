@@ -1,6 +1,6 @@
 addon.name='questlens'
 addon.author='Zarianna (100% vibe coded)'
-addon.version='0.1.98'
+addon.version='0.2.1'
 addon.desc='Active quests and missions with Phoenix wiki hover cards and maps.'
 require('common')
 local imgui=require('imgui')
@@ -83,7 +83,7 @@ local function inGame()
 end
 local socketOK,socket=pcall(require,'socket')
 local now=function() return socketOK and socket.gettime() or os.time() end
-local function say(s) print('[QuestLens] '..s) end
+local function say(s) print('\30\104[QuestLens] '..s..'\30\01') end
 local function savePins()
     local ok,err=pinStore.save(addon.path,character,pins,trackingOptions)
     if not ok then say('Could not save tracking settings: '..tostring(err)) end
@@ -290,7 +290,8 @@ local function tooltip(title)
     imgui.TextColored({0.95,0.84,0.55,1},title)
     imgui.Separator()
     if page and not page.error then
-        if page.source=='BG' then imgui.TextWrapped('BG-Wiki fallback; Phoenix details may differ.');imgui.Separator() end
+        if page.source=='BG' then imgui.TextColored({1,0.78,0.35,1},'BG-WIKI: RETAIL GUIDE')
+            imgui.TextWrapped('May not match Phoenix era. Fast travel, requirements and rewards can differ.');imgui.Separator() end
         if page.wardrobeNote then imgui.TextWrapped(page.wardrobeNote);imgui.Separator() end
         if not itemCard(page) then
             local pictures=page.images or {}
@@ -314,6 +315,7 @@ local function greenCheck(label)
     end
     if imgui.IsItemHovered() then imgui.BeginTooltip();imgui.TextUnformatted(label);imgui.EndTooltip() end
 end
+local guideLayout=require('lib.guide_layout')
 local renderedPage,renderedBlocks
 local function guideText(page)
     if renderedPage~=page then
@@ -321,6 +323,8 @@ local function guideText(page)
         for _,block in ipairs(renderedBlocks) do block.spans=inline.spans(block.text,page.links) end
     end
     local width=math.max(80,math.min(780,imgui.GetContentRegionAvail()))
+    local fontWidth,fontHeight=imgui.CalcTextSize('M')
+    local fontKey=tostring(fontWidth)..':'..tostring(fontHeight)
     local requirements=false
     for _,block in ipairs(renderedBlocks) do
         local display=true
@@ -343,21 +347,14 @@ local function guideText(page)
                 used=used+22
             end
         end
-        local pos=1
-        while pos<=#span.text do
-            local rest=span.text:sub(pos)
-            local token=rest:match('^%s+') or rest:match('^%S+')
-            pos=pos+#token
-            local _,newlines=token:gsub('\n','')
-            if newlines>0 then
-                used=0
-                for i=2,newlines do imgui.NewLine() end
-            elseif not token:match('^%s+$') or used>0 then
-                local w=imgui.CalcTextSize(token)
-                if used>0 and used+w<=width then imgui.SameLine(0,0)
-                else used=0 end
-                if span.title and not token:match('^%s+$') then
-                    imgui.TextColored({0.95,0.75,0.4,1},token)
+        local runs,newUsed=guideLayout.runs(span,width,used,imgui.CalcTextSize,fontKey)
+        for _,run in ipairs(runs) do
+            if run.blankLines then
+                for i=1,run.blankLines do imgui.NewLine() end
+            else
+                if run.sameLine then imgui.SameLine(0,0) end
+                if span.title and not run.text:match('^%s+$') then
+                    imgui.TextColored({0.95,0.75,0.4,1},run.text)
                     local map
                     for _,v in ipairs(page.images or {}) do
                         if span.title=='Map image: '..v.file then map=v;break end
@@ -373,10 +370,10 @@ local function guideText(page)
                         if imgui.IsItemClicked(0) then go(span.title,true) end
                         tooltip(span.title)
                     end
-                else imgui.TextUnformatted(token,#token) end
-                used=used+w
+                else imgui.TextUnformatted(run.text,#run.text) end
             end
         end
+        used=newUsed
         end
         if requirements then
             local seen={}
@@ -572,7 +569,7 @@ local function showDetails()
         else
             if page.source=='BG' then
                 imgui.TextColored({1,0.78,0.35,1},'BG-Wiki fallback guide')
-                imgui.TextWrapped('Phoenix guide unavailable. Retail steps and rewards may differ from Phoenix. Phoenix is checked again weekly, or when you click Refresh guide.')
+                imgui.TextWrapped('Phoenix guide unavailable. BG-Wiki describes retail FFXI and may not match the Phoenix server era. Fast travel (such as Home Point warps), quest steps, requirements and rewards may be unavailable or different on Phoenix. Phoenix is checked again weekly, or when you click Refresh guide.')
                 if page.phoenixReference and imgui.CollapsingHeader('Phoenix-verified item reference') then
                     guideText(page.phoenixReference)
                 end
@@ -668,6 +665,7 @@ ashita.events.register('command','questlens_command',function(e)
         if #reception.quests>0 then reception.opened[1]=true;reception.at=now()
         else say('No newly accepted quests detected this session.') end
     elseif cmd=='inventory' then inventoryOpen[1]=not inventoryOpen[1];inventoryScanAt=-100
+    elseif cmd=='reload' then AshitaCore:GetChatManager():QueueCommand(1,'/addon reload questlens')
     elseif cmd=='refresh' then refreshLog()
     elseif cmd=='updates' then wiki.checkUpdates(true);say(wiki.updateMessage())
     elseif cmd=='hide' then opened[1]=false;detail[1]=false;inventoryOpen[1]=false;reception.opened[1]=false
@@ -675,7 +673,7 @@ ashita.events.register('command','questlens_command',function(e)
     elseif cmd=='lookup' then
         local title=e.command:match('^%S+%s+%S+%s+(.+)$')
         if title then go(title:gsub('^"',''):gsub('"$',''),true) else say('Usage: /ql lookup Armada Sollerets') end
-    elseif cmd=='help' then say('/ql show | hide | refresh | updates | inventory | received | lookup <item, quest or zone> | help')
+    elseif cmd=='help' then say('/ql show | hide | reload | refresh | updates | inventory | received | lookup <item, quest or zone> | help')
     else say('Unknown command. Use /ql help.') end
 end)
 ashita.events.register('d3d_present','questlens_draw',function()
@@ -711,7 +709,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
             end
             if trackingOptions.autoUnpin and tracker.isCompleted(state,entry) then
                 pins[key]=nil;removed=true;completedNotice=entry
-                say('Completed: '..entry.name..'. Removed its pin.')
+                say('QUEST/MISSION COMPLETED: '..entry.name..'. Removed its pin.')
                 if trackingOptions.showFollowup then wiki.prefetch(entry.name) end
             end
         end
@@ -783,7 +781,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
                 local height={trackingOptions.markerHeight or 0.65}
                 if imgui.SliderFloat('Marker height',height,0.2,1.3,'%.2f') then trackingOptions.markerHeight=height[1];savePins() end
                 imgui.TextWrapped('Lower values bring the Moogle closer to the NPC. Saved per character.')
-                imgui.TextWrapped('Markers appear within 5 yalms for indexed quests you have not accepted or completed. Coverage is incomplete; fame, level and other prerequisites may still apply. Hidden during cutscenes and zoning.')
+                imgui.TextWrapped('Markers appear within 9 yalms for indexed quests you have not accepted or completed. Coverage is incomplete; fame, level and other prerequisites may still apply. Hidden during cutscenes and zoning.')
                 if worldMarkers.fault then imgui.TextWrapped('Markers disabled after a rendering error: '..worldMarkers.fault) end
                 imgui.TextWrapped('Follow-ups use the guide’s Next quest field when available. Item notices check loaded storage; unavailable bags may still hold the item.')
             end
@@ -957,4 +955,4 @@ end)
 ashita.events.register('d3d_beginscene','questlens_marker_camera',function()
     worldMarkers.beginScene(trackingOptions.worldMarkers or worldMarkers.debugWorld)
 end)
-ashita.events.register('unload','questlens_unload',function() wiki.release() end)
+ashita.events.register('unload','questlens_unload',function() worldMarkers.cleanup();wiki.release() end)
