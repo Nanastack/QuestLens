@@ -1,6 +1,12 @@
 # QuestLens
 
+
 <img width="100%" alt="QuestLens in game" src="https://github.com/user-attachments/assets/710f6431-d367-4a44-92b9-da6c689cc059" />
+
+<img width="2622" height="1133" alt="Screenshot 2026-10-10 104303" src="https://github.com/user-attachments/assets/51364c2a-7f88-4583-8250-cae76b065f37" />
+
+Quest and mission tracking for **Phoenix XI**, using **Ashita v4 on 64-bit Windows**.
+
 
 Quest and mission tracking for **Phoenix XI**, with guides, item uses, and nearby NPC hints.
 
