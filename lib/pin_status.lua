@@ -30,4 +30,8 @@ function M.repeatability(page)
     if page.localGuide and text:find('repeatable%.') then return 'Repeatable' end
     return 'Repeatability unknown'
 end
+function M.itemQuestLabel(entry,completed,active,page)
+    local status=completed and ' (Complete)' or active and ' (Active)' or ''
+    return entry.name..status..(M.repeatability(page)=='Repeatable' and ' - Repeatable' or '')
+end
 return M

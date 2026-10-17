@@ -16,7 +16,7 @@ function M.tick(time,cleanup)
                 M.pending[id]=nil
                 local valid=entities:GetServerId(id)==queued.actor and entities:GetActorPointer(id)==queued.pointer and entities:GetStatus(id)==0
                     and playerIndex==queued.player and entities:GetServerId(playerIndex)==queued.target
-                if valid then
+                if valid and not queued.renderRange then
                     local dx=entities:GetLocalPositionX(id)-entities:GetLocalPositionX(playerIndex)
                     local dy=entities:GetLocalPositionY(id)-entities:GetLocalPositionY(playerIndex)
                     local dz=entities:GetLocalPositionZ(id)-entities:GetLocalPositionZ(playerIndex)
@@ -62,7 +62,7 @@ local function facePlayer(entities,npc,player,actor,time)
     entities:SetLocalPositionYaw(npc,yaw)
     if snapshot.lastYaw then entities:SetLastPositionYaw(npc,yaw) end
 end
-function M.tryWave(entities,npc,player,time,inRange,force)
+function M.tryWave(entities,npc,player,time,inRange,force,renderRange)
     local delay=math.max(5,math.min(300,tonumber(M.delay) or 20))
     if not inRange or (not force and (not M.enabled or time-M.last<delay)) then return false end
     local race=entities:GetRace(npc)
@@ -83,7 +83,7 @@ function M.tryWave(entities,npc,player,time,inRange,force)
     local ok,err=pcall(facePlayer,entities,npc,player,actor,time)
     if not ok then M.status='Could not prepare local facing: '..tostring(err);return false end
     local name=emote==8 and 'wave' or emote==10 and 'welcome' or 'huh'
-    M.pending[npc]={actor=actor,pointer=entities:GetActorPointer(npc),player=player,target=target,packet=packet,name=name,playAt=time+0.3}
+    M.pending[npc]={actor=actor,pointer=entities:GetActorPointer(npc),player=player,target=target,packet=packet,name=name,playAt=time+0.3,renderRange=renderRange==true}
     M.last=time;M.actors[actor]=time
     M.status='Turning '..(entities:GetName(npc) or 'NPC')..' before '..name
     return true

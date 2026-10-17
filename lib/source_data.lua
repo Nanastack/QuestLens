@@ -3,6 +3,8 @@ local json=require('json')
 local manifest
 local bundledNpcs={}
 for _,q in ipairs(require('data.quest_npcs')) do bundledNpcs[#bundledNpcs+1]=q end
+local bundledTurnins={}
+for key,recipes in pairs(require('data.repeat_turnins')) do bundledTurnins[key]=recipes end
 local M={revision=0,current=nil}
 local function norm(s)return s:lower():gsub('[^a-z0-9]','')end
 local function integer(n,min,max)return type(n)=='number' and n==math.floor(n) and n>=min and n<=max end
@@ -82,7 +84,9 @@ function M.apply(data)
         if id~=4094 then
             items[id]=items[id] or {}
             for _,q in ipairs(entries) do
-                if manifest.titles[q.group..':'..norm(q.title)] then
+                -- Explicit bundled task: Guddal's key trade has no quest-log ID.
+                local unloggedTask=q.group=='JEUNO' and q.symbol=='kazhamairshippass' and q.title=='Kazham Airship Pass' and (id==1024 or id==1025 or id==1026)
+                if unloggedTask or manifest.titles[q.group..':'..norm(q.title)] then
                     local duplicate=false
                     for _,v in ipairs(items[id]) do if v.group==q.group and v.symbol==q.symbol then duplicate=true end end
                     if not duplicate then items[id][#items[id]+1]=q end
@@ -104,6 +108,10 @@ function M.apply(data)
         end
     end
     replace(require('data.quest_npcs'),npcs)
+    -- Keep verified bundled recipes when an older downloaded index lacks them.
+    for key,recipes in pairs(bundledTurnins) do
+        if not data.repeatTurnins[key] then data.repeatTurnins[key]=recipes end
+    end
     replace(require('data.repeat_turnins'),data.repeatTurnins)
     M.current={sha=data.sha,time=data.time,npcs=#npcs}
     M.revision=M.revision+1

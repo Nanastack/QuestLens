@@ -1,6 +1,6 @@
 addon.name='questlens'
 addon.author='Zarianna (100% vibe coded)'
-addon.version='0.2.1'
+addon.version='0.2.13'
 addon.desc='Active quests and missions with Phoenix wiki hover cards and maps.'
 require('common')
 local imgui=require('imgui')
@@ -485,7 +485,9 @@ local function showInventory()
                     imgui.PushID('item-use-'..i)
                     pinControl(entry);imgui.SameLine()
                     affiliationIcons(entry)
-                    if imgui.Selectable((active and '[ACTIVE] ' or '')..wiki.resolve(q.title)..'##use'..i,false) then go(q.title,true) end
+                    local completed=tracker.isCompleted(state,entry)
+                    local label=pinStatus.itemQuestLabel(entry,completed,active,wiki.pages[entry.name])
+                    if imgui.Selectable(label..'##use'..i,false) then go(q.title,true) end
                     tooltip(q.title)
                     imgui.PopID()
                 end
@@ -495,31 +497,14 @@ local function showInventory()
             end
         end
         imgui.Separator()
-        imgui.TextWrapped('Bag contents reflect data loaded by FFXI. Unloaded or unavailable bags are not counted. Active badges use the received quest log.')
+        imgui.TextWrapped('Bag contents reflect data loaded by FFXI. Unloaded or unavailable bags are not counted. Active and Complete labels use the received quest log. Repeatable labels appear when verified by available guide metadata.')
         if #unavailableBags>0 then imgui.TextWrapped('Unavailable: '..table.concat(unavailableBags,', ')) end
         imgui.EndChild()
     end
     imgui.End()
 end
 local function entryForTitle(title)
-    local function matches(name)
-        return wiki.resolve(name):lower():gsub('[^%w]','')==title:lower():gsub('[^%w]','')
-    end
-    for _,entry in ipairs(rows) do if matches(entry.name) then return entry end end
-    for _,entry in pairs(pins) do if matches(entry.name) then return entry end end
-    local allowed={SANDORIA=true,BASTOK=true,WINDURST=true,JEUNO=true,OTHER_AREAS=true,
-        OUTLANDS=true,AHT_URHGAN=true,ZILART=true,COP=true,TOAU=true,ASSAULT=true}
-    for _,kind in ipairs({'Quest','Mission'}) do
-        for group,names in pairs(catalog[kind=='Quest' and 'quests' or 'missions']) do
-            if allowed[group] then
-                for id,name in pairs(names) do
-                    if matches(name) then
-                        return {kind=kind,group=group,id=id,name=wiki.resolve(name),key=kind..':'..group..':'..id}
-                    end
-                end
-            end
-        end
-    end
+    return require('lib.quest_identity').find(title,rows,pins,catalog,wiki.resolve,itemQuests,inventoryRows)
 end
 local function showDetails()
     if not detail[1] or not selected then return end
@@ -542,17 +527,28 @@ local function showDetails()
         if imgui.Button('BG-Wiki') then ashita.misc.open_url(wiki.url(selected,'BG')) end
         imgui.SameLine()
         if imgui.Button('FFXIclopedia') then ashita.misc.open_url(wiki.url(selected,'FFXIclopedia')) end
-        local entry=entryForTitle(selected)
+        local page=wiki.forPhoenix(wiki.request(selected))
+        local identity=require('lib.quest_identity')
+        local entry=entryForTitle(selected) or (page and page.title and entryForTitle(page.title)) or identity.fromPage(selected,page)
         if entry then
             imgui.PushID('guide-pin');pinControl(entry)
             imgui.PopID();imgui.SameLine()
+        elseif not page or not page.item then
+            if imgui.Button('Pin as quest') then
+                local manual=identity.unindexed(selected,page)
+                pins[pinKey(manual)]=manual
+                trackingOptions.ignored=trackingOptions.ignored or {};trackingOptions.ignored[pinKey(manual)]=nil
+                revision=-1;savePins()
+            end
+            if imgui.IsItemHovered() then
+                imgui.BeginTooltip();imgui.TextWrapped('Track this page as a quest. Completion cannot be verified until it matches a known quest identity.');imgui.EndTooltip()
+            end
+            imgui.SameLine()
         end
         imgui.TextColored({0.95,0.84,0.55,1},selected)
-        if entry and ((entry.kind=='Quest' and (state.completedQuests[entry.group] or {})[entry.id]) or
-            (entry.kind=='Mission' and (state.completedMissions[entry.group] or {})[entry.id])) then
+        if entry and tracker.isCompleted(state,entry) then
             greenCheck('Completed')
         end
-        local page=wiki.forPhoenix(wiki.request(selected))
         if wiki.pending[selected] then imgui.TextDisabled('Checking Phoenix Wiki, then BG fallback...') end
         if page and page.time then imgui.TextDisabled((page.source=='BG' and 'BG-Wiki fetched: ' or 'Phoenix Wiki fetched: ')..os.date('%Y-%m-%d %H:%M',page.time)) end
         local rawPage=wiki.pages[selected]
@@ -639,6 +635,7 @@ ashita.events.register('packet_in','questlens_packets',function(e)
         state=tracker.new();rows={};completedRows={};revision=-1
         refreshStatus='Waiting for incoming quest/mission data after zoning.'
     elseif e.id==0x055 then
+        state.keyItemCheckedAt=nil
         inventoryScanAt=-100;markerInventoryAt=-100
     elseif e.id==0x056 then
         if tracker.decode(state,e.data) then
@@ -694,6 +691,11 @@ ashita.events.register('d3d_present','questlens_draw',function()
         inventoryRows={};inventorySelected=nil;inventoryScanAt=-100;cacheScanAt=-100;inventoryKnown=false
         wiki.clearPrefetch()
     end
+    if name and t-(state.keyItemCheckedAt or -100)>=1 then
+        local ok,owned=pcall(function() return AshitaCore:GetMemoryManager():GetPlayer():HasKeyItem(9) end)
+        if ok and (type(owned)=='boolean' or type(owned)=='number') then tracker.setKeyItem(state,9,owned==true or type(owned)=='number' and owned~=0) end
+        state.keyItemCheckedAt=t
+    end
     if state.revision~=revision and (not state.renderAfter or t>=state.renderAfter) then
         rows=tracker.entries(state,catalog)
         for _,v in ipairs(rows) do v.name=wiki.resolve(v.name) end
@@ -725,7 +727,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
         for _,item in ipairs(inventoryRows) do wiki.prefetch(item.name) end
         cacheScanAt=t
         for key,entry in pairs(pins) do
-            local missing=pinStatus.missingItems(entry,inventoryRows)
+            local missing=tracker.isCompleted(state,entry) and {} or pinStatus.missingItems(entry,inventoryRows)
             if inventoryKnown and #missing>0 then
                 if not missingNotices[key] then say(entry.name..': '..table.concat(missing,', ')..' not found in loaded storage.') end
                 missingNotices[key]=true
@@ -849,7 +851,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
                     imgui.SameLine()
                     affiliationIcons(v)
                     local label=v.name..(unaccepted[pinKey(v)] and '  [Unaccepted]' or (v.completed or completed[pinKey(v)]) and '  [Completed]' or '')
-                    if imgui.Selectable(label,false) then go(v.name,true) end
+                    if imgui.Selectable(label,false) then go((pins[pinKey(v)] or v).title or v.name,true) end
                     tooltip(v.name)
                     imgui.TextDisabled('    '..v.kind..' / '..v.group:gsub('_',' ')..(v.id and (' / '..v.id) or ' / Not in active log'))
                     if kind=='Completed' and v.kind=='Quest' then
@@ -861,7 +863,7 @@ ashita.events.register('d3d_present','questlens_draw',function()
                     local pin=pins[pinKey(v)]
                     if pin then
                         if tracker.isCompleted(state,pin) then imgui.TextColored({0.5,0.9,0.55,1},'    Completed') end
-                        local missing=pinStatus.missingItems(pin,inventoryRows)
+                        local missing=tracker.isCompleted(state,pin) and {} or pinStatus.missingItems(pin,inventoryRows)
                         if inventoryKnown and #missing>0 then
                             imgui.TextColored({1,0.72,0.25,1},'    Item not found in loaded storage')
                             if imgui.IsItemHovered() then

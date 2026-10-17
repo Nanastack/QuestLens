@@ -17,7 +17,7 @@ local function bits(s,start,count)
     end
     return r
 end
-function M.new() return {quests={},missions={},completedQuests={},completedMissions={},seen={},revision=0} end
+function M.new() return {quests={},missions={},completedQuests={},completedMissions={},keyItems={},seen={},revision=0} end
 local function mission(state,group,id,none,extra)
     state.missions[group]=nil
     if id~=none then state.missions[group]={id=id,extra=extra} end
@@ -80,7 +80,15 @@ function M.decode(state,s)
     else return false end
     state.revision=state.revision+1;return true
 end
+function M.setKeyItem(state,id,owned)
+    state.keyItems=state.keyItems or {}
+    if state.keyItems[id]~=owned then state.keyItems[id]=owned;state.revision=state.revision+1 end
+end
 function M.isCompleted(state,entry)
+    local title=(entry.name or entry.title or ''):lower():gsub('[^a-z0-9]','')
+    if entry.kind=='Quest' and entry.group=='JEUNO' and (entry.symbol=='kazhamairshippass' or title=='kazhamairshippass') then
+        return state.keyItems and state.keyItems[9]==true or false
+    end
     if not entry.id then return false end
     local completed=entry.kind=='Quest' and state.completedQuests or state.completedMissions
     if completed and completed[entry.group] and completed[entry.group][entry.id] then return true end
@@ -127,6 +135,9 @@ function M.completedEntries(state,catalog)
         for id in pairs(catalog.missions.COP or {}) do
             if id>0 and id<cop.id then add('Mission','COP',id) end
         end
+    end
+    if state.keyItems and state.keyItems[9] then
+        result[#result+1]={kind='Quest',group='JEUNO',name='Kazham Airship Pass',symbol='kazhamairshippass',completed=true,known=true}
     end
     table.sort(result,function(a,b)
         if a.kind~=b.kind then return a.kind<b.kind end

@@ -38,8 +38,13 @@ function M.drawMarker(drawList,x,y,factor,variant,static)
     local function point(a,b)return {x+a*factor,y+b*factor} end
     if variant=='ready' then
         local green=0xFF55DD55
-        drawList:AddQuadFilled(point(7,-24),point(10,-27),point(15,-22),point(12,-19),green)
-        drawList:AddQuadFilled(point(12,-19),point(15,-22),point(25,-34),point(28,-31),green)
+        -- Trade-hand concept: open palm offering a coin, distinct from completion.
+        drawList:AddQuadFilled(point(3,-19),point(9,-19),point(9,-8),point(3,-8),green)
+        drawList:AddQuadFilled(point(9,-19),point(15,-22),point(22,-18),point(16,-14),green)
+        drawList:AddQuadFilled(point(14,-22),point(23,-20),point(23,-16),point(14,-18),green)
+        drawList:AddQuadFilled(point(9,-17),point(17,-14),point(25,-9),point(15,-7),green)
+        drawList:AddQuadFilled(point(20,-14),point(30,-22),point(34,-20),point(25,-9),green)
+        drawList:AddCircleFilled(point(25,-33),5.5*factor,green,12)
         return
     elseif variant=='repeat' then
         local color=0xFF44DDEE
@@ -74,6 +79,8 @@ function M.drawMarker(drawList,x,y,factor,variant,static)
     end
 end
 function M.preview()
+    if imgui.Button('Greet all loaded NPCs once') then debugEmotes.requested='visible' end
+    imgui.TextWrapped('One-shot local greeting for loaded humanoid NPCs, regardless of distance or quest status. Active greetings are not restarted. No server traffic.')
     if imgui.Button('Greet targeted NPC now') then debugEmotes.requested=true end
     imgui.TextWrapped('One-shot local injection for your targeted humanoid NPC within 12 yalms, even without quests. Bypasses wave cooldowns, temporarily faces you, then waits 0.3 seconds before the emote, then checks facing for restoration 6 seconds afterward. Never sends to the server. No effect during cutscenes or zoning.')
     local waving={debugEmotes.enabled}
@@ -112,7 +119,7 @@ function M.preview()
     if imgui.Button('Retry world renderer') then M.fault=nil;M.imageError=nil;M.reset() end
     imgui.Separator()
     imgui.TextWrapped('NPC quest verification (normal or extended test range)')
-    imgui.TextWrapped('Disable the preview above to test real quest markers. Real markers show indexed unaccepted quests and confirmed completed repeatable quests. Fame and other acceptance prerequisites remain unverified.')
+    imgui.TextWrapped('Disable the preview above to test real quest markers. Real markers show indexed unaccepted quests and confirmed completed repeatable quests. Indexed job, level and completed-quest requirements are enforced. Fame and other acceptance conditions may remain unverified.')
     if not M.inspection or #M.inspection==0 then
         imgui.TextWrapped('No indexed quest NPCs found in the selected test range. Starter NPC coverage is incomplete.')
     else
@@ -145,6 +152,8 @@ function M.variant(entry,state)
 end
 function M.unaccepted(entry,state)
     local gates=eligibility[entry.group..':'..entry.id] or entry
+    if gates.requiresMainJob and M.mainJob~=gates.requiresMainJob then return false end
+    if gates.requiresMainLevel and (not M.mainLevel or M.mainLevel<gates.requiresMainLevel) then return false end
     for _,blocked in ipairs(gates.requiresNotActive or {}) do
         if (state.quests[blocked.group] or {})[blocked.id] then return false end
     end
@@ -230,6 +239,8 @@ local function draw(state,time)
     local mm=AshitaCore:GetMemoryManager();local player=mm:GetPlayer();local party=mm:GetParty()
     local index=party:GetMemberTargetIndex(0);if not index or index==0 then M.status='Player entity unavailable';return end
     local entities=mm:GetEntity();local zoning=player:GetIsZoning()
+    local jobOk,mainJob,mainLevel=pcall(function() return player:GetMainJob(),player:GetMainJobLevel() end)
+    M.mainJob=jobOk and mainJob or nil;M.mainLevel=jobOk and mainLevel or nil
     if not M.canShow(player:GetLoginStatus(),zoning==true or type(zoning)=='number' and zoning~=0,
         entities:GetStatus(index),flag(eventPointer,1),flag(hiddenPointer,10,0xB4)) then M.status='Hidden: login, zoning, cutscene or game interface';if M.forceWave then debugEmotes.status='Wave blocked: cutscene, zoning or game interface' end;return end
     local zone=party:GetMemberZone(0);local starters=zones[zone]
@@ -237,18 +248,23 @@ local function draw(state,time)
     local me={x=entities:GetLocalPositionX(index),y=entities:GetLocalPositionZ(index),z=entities:GetLocalPositionY(index)}
     if M.forceWave then
         local count=0
-        local targetIndex=mm:GetTarget():GetTargetIndex(0)
-        for _,id in ipairs({targetIndex or 0}) do
+        local targets={}
+        if M.forceAll then
+            for id=0,0x8FF do targets[#targets+1]=id end
+        else targets[1]=mm:GetTarget():GetTargetIndex(0) or 0 end
+        for _,id in ipairs(targets) do
             local pointer=entities:GetActorPointer(id)
             if pointer and pointer~=0 and id~=index then
                 local flags=entities:GetSpawnFlags(id)
                 if bit.band(flags,2)~=0 and bit.band(flags,0x11)==0 then
                     local p=M.renderPosition(pointer)
-                    if debugEmotes.tryWave(entities,id,index,time,M.inRange(p,me,12),true) then count=count+1 end
+                    local inRange=M.inRange(p,me,12)
+                    if M.forceAll then inRange=true end
+                    if debugEmotes.tryWave(entities,id,index,time,inRange,true,M.forceAll) then count=count+1 end
                 end
             end
         end
-        debugEmotes.status=count>0 and 'Turning targeted NPC; greeting queued' or 'No eligible targeted NPC within 12 yalms'
+        debugEmotes.status=count>0 and ('Queued local greetings for '..count..' NPCs') or (M.forceAll and 'No eligible loaded NPCs, or greetings already active' or 'No eligible targeted NPC within 12 yalms')
     end
     if M.zone~=zone or time-M.lastScan>=0.5 then
         M.candidates={};M.zone=zone;M.lastScan=time
@@ -299,7 +315,8 @@ local function draw(state,time)
                     elseif state.completedQuests[quest.group][quest.id] then
                         local variant=M.variant(quest,state)
                         status=variant=='ready' and 'Repeatable - turn-in items in Inventory' or variant=='repeat' and 'Repeatable - items missing or requirements unverified' or 'Completed - no quest marker'
-                    else status='Unaccepted - quest marker enabled (prerequisites unverified)' end
+                    elseif not M.unaccepted(quest,state) then status='Unavailable - indexed prerequisites unmet or unknown'
+                    else status='Unaccepted - quest marker enabled (other prerequisites unverified)' end
                     M.inspection[#M.inspection+1]=npcName..': '..quest.title..' - '..status
                 end
             end
@@ -327,7 +344,8 @@ end
 function M.present(state,time,enabled)
     debugEmotes.tick(time)
     M.markersEnabled=enabled
-    M.forceWave=debugEmotes.requested==true;debugEmotes.requested=false
+    M.forceAll=debugEmotes.requested=='visible'
+    M.forceWave=debugEmotes.requested==true or M.forceAll;debugEmotes.requested=false
     enabled=enabled or debugEmotes.enabled or M.forceWave
     M.animationTime=time
     M.lastDrawn=0
