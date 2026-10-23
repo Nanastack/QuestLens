@@ -5,9 +5,11 @@ local localGuides=require('data.local_guides')
 local sourceRevision=require('data.source_revision')
 local sourceData=require('lib.source_data')
 local siteTitles=require('lib.site_titles')
+siteTitles.configureGuides(require('data.catalog'),titles)
 local M = {pages={},queue={},pending={},textures={}}
 M.maxAge=24*60*60
 M.fallbackAge=7*24*60*60
+M.needsFallback=siteTitles.needsFallback
 M.sourceStatus=nil;M.sourceActive=nil;M.sourceAttempt=0
 M.retryAfter={}
 M.background={};M.backgroundSeen={};M.backgroundPriority={};M.lastBackground=0
@@ -108,7 +110,7 @@ function M.request(title,refresh)
     if not refresh and page and page.localGuide and page.fallbackTried and os.time()-(page.wikiCheckedAt or 0)<(M.fallbackAge or 604800) then return page end
     local maxAge=page and page.source=='BG' and (M.fallbackAge or 604800) or M.maxAge
     local oldMaps=page and not page.mapSchema and (page.text or ''):find('Map %d')
-    if not refresh and not oldMaps and page and not page.error and page.linkSchema==2 and
+    if not refresh and not oldMaps and not (M.needsFallback and M.needsFallback(title,page)) and page and not page.error and page.linkSchema==2 and
         os.time()-(page.time or 0)<maxAge then return page end
     if not refresh and os.time()<(M.retryAfter[title] or 0) then return page end
     if not M.pending[title] then
@@ -118,7 +120,7 @@ function M.request(title,refresh)
 end
 local function finish(title,v)
     local previous=M.pages[title]
-    if v.source=='BG' and previous and not previous.error and not previous.localGuide and previous.source~='BG' then
+    if v.source=='BG' and previous and not previous.error and not previous.localGuide and previous.source~='BG' and not v.phoenixIncomplete then
         -- A transient Phoenix outage should keep its existing guide preferred.
         previous.refreshError='Phoenix unavailable; keeping its cached guide.'
         M.retryAfter[title]=os.time()+300
@@ -162,7 +164,7 @@ function M.prefetch(title,priority)
     if page and not page.error then
         M.pages[title]=page
         local maxAge=page.source=='BG' and (M.fallbackAge or 604800) or M.maxAge
-        if page.linkSchema==2 and os.time()-(page.time or 0)<maxAge then return end
+        if page.linkSchema==2 and not (M.needsFallback and M.needsFallback(title,page)) and os.time()-(page.time or 0)<maxAge then return end
     end
     if M.pending[title] or os.time()<(M.retryAfter[title] or 0) then return end
     M.backgroundSeen[title]=true;M.background[#M.background+1]=title
@@ -253,6 +255,7 @@ function M.tick()
         local args='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'..
             M.path..'\\tools\\wiki.ps1" -Title "'..M.encode(siteTitles.resolve(title,'Phoenix'))..'" -Key '..key(title)
         if localGuides[title] then args=args..' -QuestReference' end
+        if siteTitles.requiresWalkthrough(title) then args=args..' -PreferBgIfNoWalkthrough' end
         args=args..' -BgTitle "'..M.encode(siteTitles.resolve(title,'BG'))..'"'
         -- Keep usable disk cache while refreshing; discard only an old error.
         local cached=read(title)

@@ -1,22 +1,37 @@
-# QuestLens 0.2.13
+# QuestLens 0.2.18 — testing release
 
-A refreshed testing build with clearer item tracking, improved pinning, and better NPC hints.
+A new testing build with personal guide notes and highlights, clearer item ownership, improved pinning, and more useful quest hints.
 
-## Highlights
+## What’s new since the GitHub 0.1.98 release
 
-- **Pin from Information pages**, including follow-up links, nation-specific quests, and quests outside the bundled catalog. Pins reopen the correct nation guide.
-- **Quest Items shows completion and repeatability** when known. Non-repeatable and unknown-repeatability labels stay hidden.
-- **Kazham airship keys now appear in Quest Items.** Owning the Kazham pass marks the task complete and stops missing-key warnings.
-- **Repeatable turn-ins support alternatives.** Mandragora-Mad recognizes any one of its five valid items, including a single Cornette in main Inventory. Ready turn-ins use a **green trade hand** instead of a completion checkmark.
-- **NPC markers check more prerequisites:** indexed job/level conditions cover 54 quests, including Ceraulian's Dragoon artifact quest. Fame and hidden server conditions remain unverified.
-- **Guide rendering does less work each frame**, with cached text measurements and combined text drawing. Actual FPS improvement depends on the scene and setup.
-- **Clearer chat notices and BG-Wiki warnings**, plus `/ql reload` for convenient addon reloads.
-- **Local NPC greetings:** random wave, welcome, or huh within 12 yalms, with turn-before-emote timing and facing restoration. The Debug tab provides the toggle, delay control, and manual preview buttons.
+- **Highlight guide text** in four colors. Keep several highlights or replace your previous selection, with undo and clear controls.
+- **Save personal notes** below each guide. Notes and highlights are saved separately for each character and guide, and survive reloads.
+- **See owned quest materials** in Related items. Verified requirements get a green ownership check; other owned items get an Owned label. Inventory and loaded storage locations are shown.
+- **Pin from Information pages**, including follow-up links and nation-specific quests. Pages that cannot be identified automatically offer Pin as quest.
+- **Quest Items shows completion and repeatability** when known. Kazham airship keys are included; owning the pass marks that task complete.
+- **Repeatable turn-ins support alternatives**, including one Cornette for Mandragora-Mad. Ready markers count main Inventory only.
+- **NPC hints check more quest prerequisites**, including supported quest chains, jobs, and levels. Markers now appear within 9 yalms.
+- **Local NPC greetings** can wave, welcome, or huh within 12 yalms. The Debug tab includes an on/off switch and delay setting.
+- **Improved guide rendering**, clearer quest notices, and `/ql reload` for easier updating.
+- **Better guide matching:** Wild Card opens the quest rather than the Corsair ability; nation-specific Mission 2-3 guides open the correct page. Supported Phoenix summaries without a walkthrough can use BG-Wiki.
+- **Clearer retail-guide warnings** explain where BG-Wiki instructions may differ from Phoenix.
+- **A simpler README** with the existing in-game screenshot and bundled moogle/item graphics.
+
+## Fixes included
+
+- Highlighting no longer drags the Information window. Turn Highlight text off when you want to move the window or follow a link.
+- Follow-up links preserve the correct nation when pinning and reopening a guide.
+- Kazham pass completion stops missing-key reminders for that completed task.
+- Guides retain cached information when a refresh fails.
 
 ## Updating
 
-Extract **questlens-0.2.13.zip** into your Ashita `addons` folder, keeping your existing `settings` and `cache` folders. Run `/ql reload`.
+Extract **questlens-0.2.18.zip** into your Ashita `addons` folder, keeping your existing `settings` and `cache` folders. Run `/ql reload`.
 
-If the quest list is empty after reloading, zone once. `/ql refresh` only rebuilds data already available locally. Tracking remains passive, and local NPC greetings send nothing to the game server.
+If progress is empty after reloading, zone once. Tracking remains passive: refreshing the display, opening guides, and enabling markers do not request extra quest logs from the game server. Wiki downloads are separate, and NPC greetings stay local.
 
-This is a testing release. Quest/item coverage is incomplete, and retail BG-Wiki guidance can differ from Phoenix. Please include your addon version, zone, and reproduction steps when reporting a problem.
+## Still being tested
+
+Coverage is incomplete. Fame and other acceptance conditions are not fully checked. Ownership checks in guides do not guarantee the full turn-in quantity. BG-Wiki may describe retail features outside Phoenix’s era.
+
+Please report your version, zone, quest/item/NPC, what happened, and how to reproduce it. Screenshots and approximate FPS are helpful for visual or performance issues.

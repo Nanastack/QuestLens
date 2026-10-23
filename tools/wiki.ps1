@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Title,[Parameter(Mandatory=$true)][string]$Key,[string]$FixtureHtml,[switch]$QuestReference,[string]$BgTitle,[switch]$FixtureBg)
+param([Parameter(Mandatory=$true)][string]$Title,[Parameter(Mandatory=$true)][string]$Key,[string]$FixtureHtml,[switch]$QuestReference,[string]$BgTitle,[switch]$FixtureBg,[switch]$PreferBgIfNoWalkthrough,[string]$FixtureBgHtml)
 $ErrorActionPreference='Stop'
 if ($Key -notmatch '^[a-f0-9]+$') { exit 1 }
 $cache=Join-Path (Split-Path $PSScriptRoot -Parent) 'cache'
@@ -23,6 +23,7 @@ try {
     $name=[Uri]::UnescapeDataString($Title)
     $source='Phoenix'
     $phoenixError=$null
+    $phoenixIncomplete=$false
     try {
     if ($FixtureBg) { throw 'No matching Phoenix wiki page.' }
     if($FixtureHtml){
@@ -42,13 +43,18 @@ try {
         $data=Fetch ($base+'/api.php?action=parse&redirects=1&prop=text&format=json&page='+[Uri]::EscapeDataString($name))
     }
     if ($data.error) { throw $data.error.info }
+    if ($PreferBgIfNoWalkthrough -and (Plain ([string]$data.parse.text.'*')) -notmatch '(?im)^\s*Walkthrough\s*$') {
+        $phoenixIncomplete=$true
+        throw 'Phoenix quest page has no walkthrough.'
+    }
     } catch {
         $phoenixError=$_.Exception.Message
         if (-not $BgTitle) { throw }
         $source='BG';$base='https://www.bg-wiki.com'
         $name=[Uri]::UnescapeDataString($BgTitle)
-        if ($FixtureBg -and $FixtureHtml) {
-            $data=@{parse=@{title=$name;text=@{'*'=[IO.File]::ReadAllText($FixtureHtml)}}}
+        if (($FixtureBg -and $FixtureHtml) -or $FixtureBgHtml) {
+            $fixture=if($FixtureBgHtml){$FixtureBgHtml}else{$FixtureHtml}
+            $data=@{parse=@{title=$name;text=@{'*'=[IO.File]::ReadAllText($fixture)}}}
         } else {
             $data=Fetch ($base+'/api.php?action=parse&redirects=1&prop=text&format=json&page='+[Uri]::EscapeDataString($name))
             if ($data.error) {
@@ -62,6 +68,9 @@ try {
         }
     }
     $html=[string]$data.parse.text.'*'
+    if ($PreferBgIfNoWalkthrough -and $source -eq 'BG' -and (Plain $html) -notmatch '(?im)^\s*(Walkthrough|Starting NPC|Previous Quest|Previous Mission)\s*:?\s*$') {
+        throw 'The BG result is not identifiable as a quest or mission guide.'
+    }
     $item=$null
     if($html -match 'pxwiki-infobox-item') {
         $fields=@{}
@@ -123,7 +132,7 @@ try {
         if($images.Count -ge 6){break}
     }
     $result=@{linkSchema=2;title=$data.parse.title;text=(Plain $html);preview=$preview;item=$item;links=@($links);images=@($images);url=$base+'/'+[Uri]::EscapeDataString($data.parse.title.Replace(' ','_'));time=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}
-    $result.source=$source;$result.fallbackSchema=1;$result.mapSchema=1
+    $result.source=$source;$result.fallbackSchema=1;$result.mapSchema=1;$result.phoenixIncomplete=$phoenixIncomplete
     if ($source -eq 'BG') {
         $result.url=$base+'/ffxi/'+[Uri]::EscapeDataString($data.parse.title.Replace(' ','_'))
         $result.text += "`n`nSource: BG-Wiki contributors. Temporary fallback; retail guide details may differ from Phoenix. " + $result.url

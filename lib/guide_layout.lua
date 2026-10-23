@@ -9,7 +9,7 @@ function M.runs(span,width,start,measure,fontKey)
             local rest=span.text:sub(pos)
             local token=rest:match('^%s+') or rest:match('^%S+')
             local _,breaks=token:gsub('\n','')
-            cache.tokens[#cache.tokens+1]={text=token,space=token:match('^%s+$')~=nil,breaks=breaks,width=breaks==0 and measure(token) or 0}
+            cache.tokens[#cache.tokens+1]={offset=pos,text=token,space=token:match('^%s+$')~=nil,breaks=breaks,width=breaks==0 and measure(token) or 0}
             pos=pos+#token
         end
     end
@@ -25,7 +25,7 @@ function M.runs(span,width,start,measure,fontKey)
         elseif not token.space or used>0 then
             if used>0 and used+token.width>width then flush();used=0;forced=true end
             if not token.space or used>0 then
-                if not current then current={text='',sameLine=used>0 and not forced};forced=false end
+                if not current then current={offset=token.offset,text='',sameLine=used>0 and not forced};forced=false end
                 current.text=current.text..token.text;used=used+token.width
             end
         end

@@ -1,15 +1,15 @@
 addon.name='questlens'
 addon.author='Zarianna (100% vibe coded)'
-addon.version='0.2.13'
+addon.version='0.2.18'
 addon.desc='Active quests and missions with Phoenix wiki hover cards and maps.'
 require('common')
 local imgui=require('imgui')
 -- Ashita's newer ImGui uses integer child flags instead of bool borders.
-local function beginChild(id,size,border)
+local function beginChild(id,size,border,windowFlags)
     if ImGuiChildFlags_Borders~=nil then
-        return imgui.BeginChild(id,size,border and ImGuiChildFlags_Borders or 0,0)
+        return imgui.BeginChild(id,size,border and ImGuiChildFlags_Borders or 0,windowFlags or 0)
     end
-    return imgui.BeginChild(id,size,border,0)
+    return imgui.BeginChild(id,size,border,windowFlags or 0)
 end
 local tracker=require('lib.tracker')
 local wiki=require('lib.wiki')
@@ -316,20 +316,27 @@ local function greenCheck(label)
     if imgui.IsItemHovered() then imgui.BeginTooltip();imgui.TextUnformatted(label);imgui.EndTooltip() end
 end
 local guideLayout=require('lib.guide_layout')
+local annotations=require('lib.guide_annotations')
 local renderedPage,renderedBlocks
 local function guideText(page)
     if renderedPage~=page then
         renderedPage=page;renderedBlocks=readable.blocks(page.text or '')
-        for _,block in ipairs(renderedBlocks) do block.spans=inline.spans(block.text,page.links) end
+        for _,block in ipairs(renderedBlocks) do
+            block.spans=inline.spans(block.text,page.links);local offset=1;block.annotationText=''
+            for _,span in ipairs(block.spans) do span.annotationOffset=offset;offset=offset+#span.text;block.annotationText=block.annotationText..span.text end
+        end
     end
     local width=math.max(80,math.min(780,imgui.GetContentRegionAvail()))
     local fontWidth,fontHeight=imgui.CalcTextSize('M')
     local fontKey=tostring(fontWidth)..':'..tostring(fontHeight)
-    local requirements=false
-    for _,block in ipairs(renderedBlocks) do
+    annotations.beginPage(page,renderedBlocks)
+    local requirements,relatedItems=false,false
+    for blockIndex,block in ipairs(renderedBlocks) do
+        annotations.block(blockIndex,block.annotationText)
         local display=true
         if block.source then display=imgui.CollapsingHeader('Source and attribution') end
         if block.heading then
+            relatedItems=block.text:lower():match('^related items')~=nil
             requirements=block.text:lower():match('^requirements')~=nil or block.text:lower():match('^required items')~=nil
             imgui.Spacing();imgui.Separator();imgui.Spacing()
             imgui.TextColored({0.95,0.84,0.55,1},block.text)
@@ -342,8 +349,8 @@ local function guideText(page)
             if icon then
                 if used>0 and used+24<=width then imgui.SameLine(0,0) else used=0 end
                 imgui.Image(icon.id,{18,18})
-                if imgui.IsItemClicked(0) then go(span.title,true) end
-                tooltip(span.title)
+                if not annotations.enabled[1] and imgui.IsItemClicked(0) then go(span.title,true) end
+                if not annotations.enabled[1] then tooltip(span.title) end
                 used=used+22
             end
         end
@@ -360,20 +367,42 @@ local function guideText(page)
                         if span.title=='Map image: '..v.file then map=v;break end
                     end
                     if map then
-                        if imgui.IsItemClicked(0) then selectedImage=map;mapOpen[1]=true end
-                        if imgui.IsItemHovered() then
+                        if not annotations.enabled[1] and imgui.IsItemClicked(0) then selectedImage=map;mapOpen[1]=true end
+                        if not annotations.enabled[1] and imgui.IsItemHovered() then
                             imgui.BeginTooltip();imgui.TextUnformatted(map.label or 'Map')
                             if not image(map,360,360) then imgui.TextWrapped('Image unavailable. Refresh guide to retry.') end
                             imgui.TextDisabled('Click to open the map inside QuestLens');imgui.EndTooltip()
                         end
                     else
-                        if imgui.IsItemClicked(0) then go(span.title,true) end
-                        tooltip(span.title)
+                        if not annotations.enabled[1] and imgui.IsItemClicked(0) then go(span.title,true) end
+                        if not annotations.enabled[1] then tooltip(span.title) end
                     end
                 else imgui.TextUnformatted(run.text,#run.text) end
+                annotations.run(block.annotationText,span.annotationOffset+(run.offset or 1)-1,run.text)
             end
         end
         used=newUsed
+        end
+        if relatedItems then
+            local seen={}
+            for _,span in ipairs(block.spans) do
+                local id=span.title and wiki.itemId(span.title)
+                if id and not seen[id] then
+                    seen[id]=true
+                    local owned=ownership.describe(span.title,inventoryRows,inventoryKnown,nil,inventory.bags)
+                    if owned and owned.owned then
+                        local verified=require('lib.item_requirements').verified(id,selected,itemQuests,wiki.resolve)
+                        if verified then
+                            greenCheck('Item owned; Phoenix scripts record a requirement for this quest. Verify the quantity and current step in the walkthrough.')
+                            imgui.SameLine()
+                            imgui.TextDisabled('('..owned.count..' owned; '..owned.allLocations..')')
+                        else
+                            imgui.SameLine()
+                            imgui.TextDisabled('(Owned: '..owned.allLocations..')')
+                        end
+                    end
+                end
+            end
         end
         if requirements then
             local seen={}
@@ -396,6 +425,7 @@ local function guideText(page)
         if not block.field then imgui.Spacing() end
         end
     end
+    annotations.endPage()
 end
 local function scanInventory()
     local ok,list,missing=pcall(function()
@@ -510,7 +540,10 @@ local function showDetails()
     if not detail[1] or not selected then return end
     if now()-inventoryScanAt>5 then scanInventory() end
     imgui.SetNextWindowSize({710,660},ImGuiCond_FirstUseEver)
-    if imgui.Begin('QuestLens - Information',detail) then
+    -- Plain text does not claim an active ImGui ID; prevent background drags
+    -- from moving either the parent or its scrolling guide while selecting.
+    local selectionFlags=annotations.enabled[1] and (ImGuiWindowFlags_NoMove or 4) or 0
+    if imgui.Begin('QuestLens - Information',detail,selectionFlags) then
         mouseNavigation()
         if #history>0 then
             if imgui.Button('Back') then navigateBack() end
@@ -527,6 +560,7 @@ local function showDetails()
         if imgui.Button('BG-Wiki') then ashita.misc.open_url(wiki.url(selected,'BG')) end
         imgui.SameLine()
         if imgui.Button('FFXIclopedia') then ashita.misc.open_url(wiki.url(selected,'FFXIclopedia')) end
+        annotations.select(addon.path,character,wiki.resolve(selected))
         local page=wiki.forPhoenix(wiki.request(selected))
         local identity=require('lib.quest_identity')
         local entry=entryForTitle(selected) or (page and page.title and entryForTitle(page.title)) or identity.fromPage(selected,page)
@@ -565,7 +599,7 @@ local function showDetails()
         else
             if page.source=='BG' then
                 imgui.TextColored({1,0.78,0.35,1},'BG-Wiki fallback guide')
-                imgui.TextWrapped('Phoenix guide unavailable. BG-Wiki describes retail FFXI and may not match the Phoenix server era. Fast travel (such as Home Point warps), quest steps, requirements and rewards may be unavailable or different on Phoenix. Phoenix is checked again weekly, or when you click Refresh guide.')
+                imgui.TextWrapped('Phoenix guide unavailable or incomplete. BG-Wiki describes retail FFXI and may not match the Phoenix server era. Fast travel (such as Home Point warps), quest steps, requirements and rewards may be unavailable or different on Phoenix. Phoenix is checked again weekly, or when you click Refresh guide.')
                 if page.phoenixReference and imgui.CollapsingHeader('Phoenix-verified item reference') then
                     guideText(page.phoenixReference)
                 end
@@ -585,9 +619,11 @@ local function showDetails()
             end
             if imgui.BeginTabBar('details-tabs') then
                 if imgui.BeginTabItem('Guide / Stats') then
-                    beginChild('guide',{0,-28},true)
+                    annotations.controls()
+                    beginChild('guide',{0,-28},true,selectionFlags)
                     if itemCard(page) then imgui.Separator() end
                     guideText(page)
+                    annotations.notes()
                     imgui.EndChild()
                     imgui.TextDisabled('Phoenix wiki text; use the full page for original layout.')
                     imgui.EndTabItem()

@@ -1,5 +1,29 @@
 # Patch notes
 
+## 0.2.18 - 2026-10-23
+
+Prepared a refreshed GitHub testing release with player-facing documentation and a summary of changes since 0.1.98. See [release notes](RELEASE_NOTES.md) for highlights, item ownership, pinning, NPC hints, guide fixes, and update instructions.
+
+## 0.2.17 - 2026-10-22
+
+Added requirement ownership checks and neutral ownership/location labels to Related items in quest guides.
+
+
+## 0.2.16 - 2026-10-18
+
+Fixed guide text selection moving the Information window by blocking parent and child window movement during highlighting.
+
+
+## 0.2.15 - 2026-10-18
+
+Added saved guide text highlights with four colors, keep/replace controls, undo/clear, and personal notes per character and guide.
+
+
+## 0.2.14 - 2026-10-17
+
+Corrected Wild Card BG-Wiki quest mapping and added missing-walkthrough fallback across known quests and missions. Cached Phoenix summaries can now refresh automatically.
+
+
 ## 0.2.13 - 2026-10-16
 
 A refreshed testing build with clearer item tracking, improved pinning, and better NPC hints.

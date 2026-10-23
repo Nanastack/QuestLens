@@ -6,6 +6,7 @@ local bg={
     cursesfoiledagolem='Curses, Foiled A-Golem!?',
     tobeeornottobee='To Bee or Not to Bee?',
     lostforwords='Lost for Words',
+    wildcard='Wild Card (Quest)',
 }
 local missionBranches={
     thethreekingdoms={phoenix='The Three Kingdoms',bg='Windurst Mission 2-3',suffixes={['']=true,sandoria=true,bastok=true,sandoria2=true,bastok2=true}},
@@ -24,5 +25,29 @@ function M.resolve(title,site)
     end
     if site~='BG' then return title end
     return bg[normalized] or title
+end
+M.guideTitles={wildcard=true}
+function M.configureGuides(catalog,aliases)
+    local allowed={SANDORIA=true,BASTOK=true,WINDURST=true,JEUNO=true,OTHER_AREAS=true,OUTLANDS=true,AHT_URHGAN=true,ZILART=true,COP=true,TOAU=true,ASSAULT=true}
+    local function add(title) M.guideTitles[title:lower():gsub('[^a-z0-9]','')]=true end
+    for _,kind in ipairs({'quests','missions'}) do
+        for group,names in pairs(catalog[kind] or {}) do
+            if allowed[group] then
+                for _,name in pairs(names) do add(name);add(M.resolve(name,'Phoenix'));add(M.resolve(name,'BG')) end
+            end
+        end
+    end
+    for key,name in pairs(aliases or {}) do if M.guideTitles[key] then add(name) end end
+end
+function M.requiresWalkthrough(title)
+    return type(title)=='string' and M.guideTitles[title:lower():gsub('[^a-z0-9]','')]==true
+end
+function M.needsFallback(title,page)
+    if not M.requiresWalkthrough(title) or not page or page.error or page.localGuide then return false end
+    if page.source=='BG' then
+        return title:lower():gsub('[^a-z0-9]','')=='wildcard' and (page.title or ''):lower():gsub('[^a-z0-9]','')~='wildcardquest'
+    end
+    local text='\n'..(page.text or ''):gsub('\r','')..'\n'
+    return not text:lower():find('\n%s*walkthrough%s*\n')
 end
 return M

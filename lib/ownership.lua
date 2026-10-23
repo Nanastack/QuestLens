@@ -11,9 +11,12 @@ function M.describe(title,rows,known,required,bags)
                 if bag~=0 and count>0 then locations[#locations+1]=(bags[bag] or tostring(bag))..': '..count end
             end
             table.sort(locations)
+            local allLocations={}
+            if (item.bags[0] or 0)>0 then allLocations[#allLocations+1]='Inventory: '..item.bags[0] end
+            for _,location in ipairs(locations) do allLocations[#allLocations+1]=location end
             local amount=required or 1
             return {owned=item.count>=amount,inventory=(item.bags[0] or 0)>=amount,
-                count=item.count,locations=table.concat(locations,', '),quantityKnown=required~=nil}
+                count=item.count,allLocations=table.concat(allLocations,', '),locations=table.concat(locations,', '),quantityKnown=required~=nil}
         end
     end
 end
